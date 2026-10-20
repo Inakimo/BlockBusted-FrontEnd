@@ -5,7 +5,9 @@ function Navigation({ usuario, onLogout }) {
   return (
     <header className="nav-header">
       <nav className="nav-inner">
-        <Link to="/" className="nav-logo">BLOCKBUSTED</Link>
+        <Link to="/">
+          <img src="/logo.png" alt="BlockBusted" className="nav-logo-img" />
+        </Link>
 
         <ul className="nav-links">
           <li>

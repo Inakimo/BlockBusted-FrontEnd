@@ -28,7 +28,7 @@ function App() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#141414', color: '#e5e5e5' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#0F0E17', color: '#FFF8E7' }}>
       <Navigation usuario={usuario} onLogout={handleLogout} />
       <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem 1.5rem' }}>
         <Routes>

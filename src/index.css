@@ -1,13 +1,15 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Montserrat:wght@400;500;600;700;800&display=swap');
 
 @theme {
-  --color-nb-black: #141414;
-  --color-nb-card: #1f1f1f;
-  --color-nb-border: #2d2d2d;
-  --color-nb-red: #E50914;
-  --color-nb-red-hover: #f40612;
-  --color-nb-muted: #808080;
-  --color-nb-white: #e5e5e5;
+  --color-bb-bg: #0F0E17;
+  --color-bb-card: #FFFFFF;
+  --color-bb-yellow: #FFD700;
+  --color-bb-red: #E53935;
+  --color-bb-blue: #1E88E5;
+  --color-bb-black: #000000;
+  --color-bb-muted: #6b7280;
+  --color-bb-cream: #FFF8E7;
 }
 
 * {
@@ -15,8 +17,14 @@
 }
 
 body {
-  background-color: #141414;
-  color: #e5e5e5;
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  background-color: #0F0E17;
+  color: #FFF8E7;
+  font-family: 'Montserrat', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   margin: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Bangers', 'Impact', sans-serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
