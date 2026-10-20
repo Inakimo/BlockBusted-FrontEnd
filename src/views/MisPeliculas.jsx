@@ -28,7 +28,7 @@ function MisPeliculas({ token, usuario }) {
   const [nuevaFotoUrl, setNuevaFotoUrl] = useState('')
 
   function cargarPeliculas() {
-    setCargando(true)
+    if (peliculas.length === 0) setCargando(true)
     setError(null)
 
     fetch(`${URL_BASE}/api/peliculas`)
@@ -255,7 +255,7 @@ function MisPeliculas({ token, usuario }) {
       .catch((err) => { console.error('Error al eliminar película', err) })
   }
 
-  if (cargando) {
+  if (cargando && peliculas.length === 0) {
     return (
       <div className="w-full max-w-7xl mx-auto px-margin-sm md:px-margin py-space-xl">
         <p className="font-headline-md text-headline-md text-cream text-center">Cargando películas...</p>

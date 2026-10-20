@@ -40,7 +40,7 @@ function OrdenesAdmin({ token }) {
   if (cargando) return <p className="text-center text-cream font-body-lg text-body-lg py-space-xl">Cargando órdenes...</p>
   if (error) return <p className="text-center text-secondary-container font-body-lg text-body-lg py-space-xl">{error}</p>
 
-  const totalConfirmadas = ordenes.filter((o) => o.estado === 'CONFIRMADA').length
+  const totalConfirmadas = ordenes.filter((o) => !o.estado || o.estado === 'CONFIRMADA').length
   const totalCanceladas = ordenes.filter((o) => o.estado === 'CANCELADA').length
 
   return (
@@ -124,114 +124,117 @@ function OrdenesAdmin({ token }) {
         </div>
       ) : (
         <div className="flex flex-col gap-space-lg">
-          {ordenes.map((orden) => (
-            <div
-              key={orden.id}
-              className="bg-card-surface border-[3px] border-ink-black shadow-[5px_5px_0px_#000000] overflow-hidden transition-transform duration-150 hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[7px_7px_0px_#000000]"
-            >
-              {/* Header */}
-              <div className="bg-surface-container-lowest text-cream p-space-md border-b-[3px] border-ink-black flex flex-wrap items-center justify-between gap-space-sm">
-                <div className="flex flex-wrap items-center gap-space-sm">
-                  <span className="font-headline-md text-headline-md text-primary-container tracking-wider drop-shadow-[1px_1px_0px_#000000]">
-                    ORDEN #{orden.id}
-                  </span>
-                  <span className="text-on-surface-variant font-label-md text-label-md">·</span>
-                  <span className="bg-surface-container-high px-space-xs py-[2px] font-label-sm text-label-sm text-cream border border-ink-black uppercase">
-                    📅 {formatearFecha(orden.fecha)}
-                  </span>
-                  {orden.usuario && (
-                    <>
-                      <span className="text-on-surface-variant font-label-md text-label-md">·</span>
-                      <div className="flex items-center gap-1 font-label-md text-label-md text-cream">
-                        <span className="text-muted-gray uppercase font-bold">Cliente:</span>
-                        <span className="text-primary-container underline decoration-secondary font-bold">{orden.usuario.username}</span>
+          {ordenes.map((orden) => {
+            const esConfirmada = !orden.estado || orden.estado === 'CONFIRMADA'
+            return (
+              <div
+                key={orden.id}
+                className="bg-card-surface border-[3px] border-ink-black shadow-[5px_5px_0px_#000000] overflow-hidden transition-transform duration-150 hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[7px_7px_0px_#000000]"
+              >
+                {/* Header */}
+                <div className="bg-surface-container-lowest text-cream p-space-md border-b-[3px] border-ink-black flex flex-wrap items-center justify-between gap-space-sm">
+                  <div className="flex flex-wrap items-center gap-space-sm">
+                    <span className="font-headline-md text-headline-md text-primary-container tracking-wider drop-shadow-[1px_1px_0px_#000000]">
+                      ORDEN #{orden.id}
+                    </span>
+                    <span className="text-on-surface-variant font-label-md text-label-md">·</span>
+                    <span className="bg-surface-container-high px-space-xs py-[2px] font-label-sm text-label-sm text-cream border border-ink-black uppercase">
+                      📅 {formatearFecha(orden.fecha)}
+                    </span>
+                    {orden.usuario && (
+                      <>
+                        <span className="text-on-surface-variant font-label-md text-label-md">·</span>
+                        <div className="flex items-center gap-1 font-label-md text-label-md text-cream">
+                          <span className="text-muted-gray uppercase font-bold">Cliente:</span>
+                          <span className="text-primary-container underline decoration-secondary font-bold">{orden.usuario.username}</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-space-md flex-wrap">
+                    {esConfirmada ? (
+                      <div className="bg-[#10b981] text-ink-black font-label-sm text-label-sm font-extrabold px-space-sm py-[4px] border-[2px] border-ink-black shadow-[2px_2px_0px_#000000] flex items-center gap-1 uppercase tracking-wider">
+                        <span className="material-symbols-outlined text-[16px] font-bold">check_circle</span>
+                        CONFIRMADA
                       </div>
-                    </>
-                  )}
-                </div>
-                <div className="flex items-center gap-space-md flex-wrap">
-                  {orden.estado === 'CONFIRMADA' ? (
-                    <div className="bg-[#10b981] text-ink-black font-label-sm text-label-sm font-extrabold px-space-sm py-[4px] border-[2px] border-ink-black shadow-[2px_2px_0px_#000000] flex items-center gap-1 uppercase tracking-wider">
-                      <span className="material-symbols-outlined text-[16px] font-bold">check_circle</span>
-                      CONFIRMADA
+                    ) : (
+                      <div className="bg-secondary-container text-cream font-label-sm text-label-sm font-extrabold px-space-sm py-[4px] border-[2px] border-ink-black shadow-[2px_2px_0px_#000000] flex items-center gap-1 uppercase tracking-wider">
+                        <span className="material-symbols-outlined text-[16px] font-bold">cancel</span>
+                        CANCELADA
+                      </div>
+                    )}
+                    <div className={
+                      esConfirmada
+                        ? 'bg-secondary-container text-cream font-headline-sm text-headline-sm px-space-md py-[4px] border-[2px] border-ink-black shadow-[3px_3px_0px_#000000] uppercase tracking-wider'
+                        : 'bg-surface-container-high text-secondary font-headline-sm text-headline-sm px-space-md py-[4px] border-[2px] border-ink-black shadow-[3px_3px_0px_#000000] uppercase tracking-wider line-through decoration-secondary-container decoration-4'
+                    }>
+                      TOTAL: ${orden.total}
                     </div>
-                  ) : (
-                    <div className="bg-secondary-container text-cream font-label-sm text-label-sm font-extrabold px-space-sm py-[4px] border-[2px] border-ink-black shadow-[2px_2px_0px_#000000] flex items-center gap-1 uppercase tracking-wider">
-                      <span className="material-symbols-outlined text-[16px] font-bold">cancel</span>
-                      {orden.estado}
-                    </div>
-                  )}
-                  <div className={
-                    orden.estado === 'CONFIRMADA'
-                      ? 'bg-secondary-container text-cream font-headline-sm text-headline-sm px-space-md py-[4px] border-[2px] border-ink-black shadow-[3px_3px_0px_#000000] uppercase tracking-wider'
-                      : 'bg-surface-container-high text-secondary font-headline-sm text-headline-sm px-space-md py-[4px] border-[2px] border-ink-black shadow-[3px_3px_0px_#000000] uppercase tracking-wider line-through decoration-secondary-container decoration-4'
-                  }>
-                    TOTAL: ${orden.total}
                   </div>
                 </div>
-              </div>
 
-              {/* Contenido */}
-              <div className={`p-space-md flex flex-col gap-space-md ${orden.estado === 'CANCELADA' ? 'opacity-90' : ''}`}>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse border-[2px] border-ink-black">
-                    <thead>
-                      <tr className="bg-cream text-ink-black border-b-[2px] border-ink-black font-label-sm text-label-sm uppercase tracking-wider">
-                        <th className="py-space-xs px-space-sm border-r-2 border-ink-black">Película / Título VHS</th>
-                        <th className="py-space-xs px-space-sm border-r-2 border-ink-black text-center w-24">Cant.</th>
-                        <th className="py-space-xs px-space-sm border-r-2 border-ink-black text-right w-32">Precio Unit.</th>
-                        <th className={`py-space-xs px-space-sm text-right w-32 ${orden.estado === 'CONFIRMADA' ? 'bg-primary-container' : 'bg-gray-200'}`}>Subtotal</th>
-                      </tr>
-                    </thead>
-                    <tbody className="font-body-sm text-body-sm text-ink-black divide-y-2 divide-ink-black">
-                      {orden.detalles.map((detalle) => (
-                        <tr key={detalle.id} className={orden.estado === 'CANCELADA' ? 'bg-gray-50' : 'hover:bg-yellow-50 transition-colors'}>
-                          <td className={`py-space-xs px-space-sm border-r-2 border-ink-black font-bold flex items-center gap-space-xs ${orden.estado === 'CANCELADA' ? 'line-through text-muted-gray' : ''}`}>
-                            <span className={`w-3 h-3 inline-block border border-ink-black ${orden.estado === 'CANCELADA' ? 'bg-muted-gray' : 'bg-secondary-container'}`}></span>
-                            <span className="font-headline-sm text-headline-sm tracking-wide">
-                              {detalle.pelicula && detalle.pelicula.titulo}
-                            </span>
-                          </td>
-                          <td className={`py-space-xs px-space-sm border-r-2 border-ink-black text-center font-bold ${orden.estado === 'CANCELADA' ? 'text-muted-gray' : ''}`}>
-                            {detalle.cantidad}
-                          </td>
-                          <td className={`py-space-xs px-space-sm border-r-2 border-ink-black text-right font-medium ${orden.estado === 'CANCELADA' ? 'text-muted-gray' : ''}`}>
-                            ${detalle.precioUnitario}
-                          </td>
-                          <td className={`py-space-xs px-space-sm text-right font-bold ${orden.estado === 'CANCELADA' ? 'text-muted-gray' : 'text-secondary-container'}`}>
-                            ${detalle.precioUnitario * detalle.cantidad}
-                          </td>
+                {/* Contenido */}
+                <div className={`p-space-md flex flex-col gap-space-md ${!esConfirmada ? 'opacity-90' : ''}`}>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse border-[2px] border-ink-black">
+                      <thead>
+                        <tr className="bg-cream text-ink-black border-b-[2px] border-ink-black font-label-sm text-label-sm uppercase tracking-wider">
+                          <th className="py-space-xs px-space-sm border-r-2 border-ink-black">Película / Título VHS</th>
+                          <th className="py-space-xs px-space-sm border-r-2 border-ink-black text-center w-24">Cant.</th>
+                          <th className="py-space-xs px-space-sm border-r-2 border-ink-black text-right w-32">Precio Unit.</th>
+                          <th className={`py-space-xs px-space-sm text-right w-32 ${esConfirmada ? 'bg-primary-container' : 'bg-gray-200'}`}>Subtotal</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {orden.estado === 'CANCELADA' && (
-                  <div className="bg-secondary-fixed text-on-secondary-fixed border-[3px] border-secondary-container shadow-[3px_3px_0px_#000000] p-space-sm flex items-center gap-space-sm">
-                    <div className="p-space-xs bg-secondary-container text-cream border-2 border-ink-black shadow-[1px_1px_0px_#000000]">
-                      <span className="material-symbols-outlined text-[24px] block">info</span>
-                    </div>
-                    <div className="flex-1">
-                      <span className="font-label-sm text-label-sm uppercase block font-black text-secondary-container">Orden anulada</span>
-                      <p className="font-body-sm text-body-sm font-semibold text-ink-black m-0">
-                        Esta orden fue cancelada. El importe fue reembolsado al comprador.
-                      </p>
-                    </div>
+                      </thead>
+                      <tbody className="font-body-sm text-body-sm text-ink-black divide-y-2 divide-ink-black">
+                        {orden.detalles.map((detalle) => (
+                          <tr key={detalle.id} className={!esConfirmada ? 'bg-gray-50' : 'hover:bg-yellow-50 transition-colors'}>
+                            <td className={`py-space-xs px-space-sm border-r-2 border-ink-black font-bold flex items-center gap-space-xs ${!esConfirmada ? 'line-through text-muted-gray' : ''}`}>
+                              <span className={`w-3 h-3 inline-block border border-ink-black ${!esConfirmada ? 'bg-muted-gray' : 'bg-secondary-container'}`}></span>
+                              <span className="font-headline-sm text-headline-sm tracking-wide">
+                                {detalle.pelicula && detalle.pelicula.titulo}
+                              </span>
+                            </td>
+                            <td className={`py-space-xs px-space-sm border-r-2 border-ink-black text-center font-bold ${!esConfirmada ? 'text-muted-gray' : ''}`}>
+                              {detalle.cantidad}
+                            </td>
+                            <td className={`py-space-xs px-space-sm border-r-2 border-ink-black text-right font-medium ${!esConfirmada ? 'text-muted-gray' : ''}`}>
+                              ${detalle.precioUnitario}
+                            </td>
+                            <td className={`py-space-xs px-space-sm text-right font-bold ${!esConfirmada ? 'text-muted-gray' : 'text-secondary-container'}`}>
+                              ${detalle.precioUnitario * detalle.cantidad}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                )}
-              </div>
 
-              {/* Footer */}
-              <div className="bg-surface-container-low px-space-md py-space-xs border-t-[2px] border-ink-black flex flex-wrap items-center justify-between gap-space-xs">
-                <div className="font-label-sm text-label-sm text-on-surface-variant uppercase flex items-center gap-2">
-                  <span>Ticket: <strong>#BB-{orden.id}</strong></span>
-                  <span>·</span>
-                  <span className="text-primary-container">{orden.detalles.length} ítem(s)</span>
+                  {!esConfirmada && (
+                    <div className="bg-secondary-fixed text-on-secondary-fixed border-[3px] border-secondary-container shadow-[3px_3px_0px_#000000] p-space-sm flex items-center gap-space-sm">
+                      <div className="p-space-xs bg-secondary-container text-cream border-2 border-ink-black shadow-[1px_1px_0px_#000000]">
+                        <span className="material-symbols-outlined text-[24px] block">info</span>
+                      </div>
+                      <div className="flex-1">
+                        <span className="font-label-sm text-label-sm uppercase block font-black text-secondary-container">Orden anulada</span>
+                        <p className="font-body-sm text-body-sm font-semibold text-ink-black m-0">
+                          Esta orden fue cancelada. El importe fue reembolsado al comprador.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer */}
+                <div className="bg-surface-container-low px-space-md py-space-xs border-t-[2px] border-ink-black flex flex-wrap items-center justify-between gap-space-xs">
+                  <div className="font-label-sm text-label-sm text-on-surface-variant uppercase flex items-center gap-2">
+                    <span>Ticket: <strong>#BB-{orden.id}</strong></span>
+                    <span>·</span>
+                    <span className="text-primary-container">{orden.detalles.length} ítem(s)</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </section>

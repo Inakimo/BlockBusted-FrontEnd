@@ -15,7 +15,7 @@ function Categorias({ token }) {
   const [editDescripcion, setEditDescripcion] = useState('')
 
   function cargarCategorias() {
-    setCargando(true)
+    if (categorias.length === 0) setCargando(true)
     setError(null)
 
     fetch(`${URL_BASE}/api/categorias`)
@@ -112,7 +112,7 @@ function Categorias({ token }) {
       .catch((err) => { console.error('Error al eliminar categoría', err) })
   }
 
-  if (cargando) return <p className="text-center text-cream font-body-lg text-body-lg py-space-xl">Cargando categorías...</p>
+  if (cargando && categorias.length === 0) return <p className="text-center text-cream font-body-lg text-body-lg py-space-xl">Cargando categorías...</p>
   if (error) return <p className="text-center text-secondary-container font-body-lg text-body-lg py-space-xl">{error}</p>
 
   return (

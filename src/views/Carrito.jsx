@@ -11,7 +11,7 @@ function Carrito({ token, onCarritoActualizado }) {
   const navigate = useNavigate()
 
   function cargarCarrito() {
-    setCargando(true)
+    if (!carrito) setCargando(true)
     setError(null)
 
     fetch(`${URL_BASE}/api/carrito`, {
@@ -119,7 +119,7 @@ function Carrito({ token, onCarritoActualizado }) {
       })
   }
 
-  if (cargando) {
+  if (cargando && !carrito) {
     return (
       <div className="w-full py-space-xl px-margin-sm flex items-center justify-center">
         <p className="font-headline-md text-headline-md uppercase text-cream">Cargando carrito...</p>

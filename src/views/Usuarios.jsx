@@ -8,7 +8,7 @@ function Usuarios({ token }) {
   const [error, setError] = useState(null)
 
   function cargarUsuarios() {
-    setCargando(true)
+    if (usuarios.length === 0) setCargando(true)
     setError(null)
 
     fetch(`${URL_BASE}/api/usuarios`, {
@@ -70,7 +70,7 @@ function Usuarios({ token }) {
       .catch((err) => { console.error('Error al eliminar usuario', err) })
   }
 
-  if (cargando) return <p className="text-center text-cream font-body-lg text-body-lg py-space-xl">Cargando usuarios...</p>
+  if (cargando && usuarios.length === 0) return <p className="text-center text-cream font-body-lg text-body-lg py-space-xl">Cargando usuarios...</p>
   if (error) return <p className="text-center text-secondary-container font-body-lg text-body-lg py-space-xl">{error}</p>
 
   const totalAdmins = usuarios.filter((u) => u.role === 'ADMIN').length

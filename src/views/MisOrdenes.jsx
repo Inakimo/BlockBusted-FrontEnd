@@ -6,10 +6,9 @@ function MisOrdenes({ token }) {
   const [ordenes, setOrdenes] = useState([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
-  const [ordenACancelar, setOrdenACancelar] = useState(null)
 
   function cargarOrdenes() {
-    setCargando(true)
+    if (ordenes.length === 0) setCargando(true)
     setError(null)
 
     fetch(`${URL_BASE}/api/ordenes`, {
@@ -45,26 +44,8 @@ function MisOrdenes({ token }) {
     return `${dia}/${mes}/${anio}`
   }
 
-  function handleCancelarOrden(ordenId) {
-    fetch(`${URL_BASE}/api/ordenes/${ordenId}/cancelar`, {
-      method: 'PUT',
-      headers: { 'Authorization': `Bearer ${token}` },
-    })
-      .then((response) => {
-        if (!response.ok) {
-          if (response.status === 403) { alert('No tenés permiso para cancelar esta orden.'); return }
-          return response.json().then((data) => { alert(data.message) })
-        }
-        setOrdenACancelar(null)
-        cargarOrdenes()
-      })
-      .catch((err) => {
-        console.error('Error al cancelar orden', err)
-        alert('Error de conexión.')
-      })
-  }
 
-  if (cargando) {
+  if (cargando && ordenes.length === 0) {
     return (
       <div className="w-full max-w-6xl mx-auto px-margin-sm lg:px-margin py-space-xl">
         <p className="font-headline-md text-headline-md text-cream text-center">Cargando órdenes...</p>
@@ -137,7 +118,7 @@ function MisOrdenes({ token }) {
         ) : (
           <div className="space-y-space-lg">
             {ordenes.map((orden) => {
-              const esConfirmada = orden.estado === 'CONFIRMADA'
+              const esConfirmada = !orden.estado || orden.estado === 'CONFIRMADA'
               return (
                 <article
                   key={orden.id}
@@ -258,21 +239,10 @@ function MisOrdenes({ token }) {
 
                   {/* Footer */}
                   {esConfirmada ? (
-                    <div className="pt-space-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-space-md" style={{ borderTop: '2px dashed #000000' }}>
+                    <div className="pt-space-sm flex items-center justify-between gap-space-md" style={{ borderTop: '2px dashed #000000' }}>
                       <div className="flex items-center gap-2 text-muted-gray font-body-sm text-body-sm">
                         <span className="material-symbols-outlined text-[20px] text-ink-black">package_2</span>
                         <span>Envío a domicilio seleccionado</span>
-                      </div>
-                      <div className="flex items-center gap-space-sm w-full sm:w-auto justify-end">
-                        <button
-                          type="button"
-                          onClick={() => setOrdenACancelar(orden)}
-                          className="w-full sm:w-auto bg-card-surface font-label-md text-label-md px-space-md py-2.5 shadow-[3px_3px_0px_#000000] transition-all flex items-center justify-center gap-1.5 uppercase font-extrabold cursor-pointer"
-                          style={{ color: '#E53935', border: '3px solid #E53935', borderRadius: '4px' }}
-                        >
-                          <span className="material-symbols-outlined text-[18px]">cancel</span>
-                          Cancelar orden
-                        </button>
                       </div>
                     </div>
                   ) : (
@@ -297,47 +267,6 @@ function MisOrdenes({ token }) {
           </div>
         )}
       </div>
-
-      {/* Modal cancelación */}
-      {ordenACancelar && (
-        <div className="fixed inset-0 z-50 bg-ink-black/80 flex items-center justify-center p-4">
-          <div
-            className="bg-card-surface text-ink-black shadow-[8px_8px_0_#ffd700] max-w-md w-full p-space-lg relative"
-            style={{ border: '4px solid #000000', borderRadius: '12px' }}
-          >
-            <div
-              className="w-14 h-14 rounded-full shadow-[3px_3px_0_#000000] flex items-center justify-center mx-auto mb-space-md"
-              style={{ backgroundColor: '#fee2e2', color: '#E53935', border: '3px solid #000000' }}
-            >
-              <span className="material-symbols-outlined text-[32px]">warning</span>
-            </div>
-            <h3 className="font-headline-md text-headline-md text-center text-ink-black uppercase tracking-wider mb-space-xs">
-              ¿CANCELAR ORDEN #{ordenACancelar.id}?
-            </h3>
-            <p className="font-body-md text-body-md text-muted-gray text-center mb-space-lg">
-              Esta acción devolverá las copias a las estanterías del videoclub. El reintegro de <strong className="text-ink-black">${ordenACancelar.total}</strong> se procesará al instante en tu saldo club.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-space-sm">
-              <button
-                type="button"
-                onClick={() => setOrdenACancelar(null)}
-                className="flex-1 bg-cream text-ink-black font-label-md text-label-md py-3 shadow-[3px_3px_0_#000000] uppercase transition-all"
-                style={{ border: '3px solid #000000', borderRadius: '4px' }}
-              >
-                No, mantener
-              </button>
-              <button
-                type="button"
-                onClick={() => handleCancelarOrden(ordenACancelar.id)}
-                className="flex-1 text-cream font-label-md text-label-md py-3 shadow-[3px_3px_0_#000000] uppercase transition-all"
-                style={{ backgroundColor: '#E53935', border: '3px solid #000000', borderRadius: '4px' }}
-              >
-                Sí, cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
