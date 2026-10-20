@@ -69,7 +69,7 @@ function Inicio() {
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center gap-4 mb-10 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
             <Link
               to="/catalogo"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 font-montserrat text-base uppercase bg-comic-yellow text-ink-black px-8 py-3.5 border-[3px] border-black shadow-[5px_5px_0px_#000000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[7px_7px_0px_#000000] active:translate-x-[2px] active:translate-y-[2px] transition-all font-black"
@@ -84,26 +84,6 @@ function Inicio() {
               <span className="material-symbols-outlined text-comic-red text-xl">videocam</span>
               CONOCER MÁS
             </a>
-          </div>
-
-          {/* Weekend Banner Promo Box */}
-          <div className="w-full max-w-3xl bg-surface-dark border-[3px] border-black shadow-[6px_6px_0px_#FFD700] p-4 flex flex-col md:flex-row items-center justify-between gap-4 text-left">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-comic-red text-cream flex items-center justify-center border-2 border-black shadow-[2px_2px_0px_#000000] font-bangers text-2xl shrink-0">
-                !
-              </div>
-              <div>
-                <span className="font-montserrat text-sm text-comic-yellow uppercase block font-black">
-                  OFERTA DE FIN DE SEMANA: 3 CINTAS POR $30
-                </span>
-                <span className="font-montserrat text-xs sm:text-sm text-[#c8c2d6]">
-                  Llévate dos parodias absurdas y te regalamos una cinta atascada de artes marciales rumanas.
-                </span>
-              </div>
-            </div>
-            <div className="bg-cream text-ink-black font-montserrat text-xs px-3 py-1.5 border-2 border-black shadow-[2px_2px_0px_#000000] font-black uppercase tracking-wider shrink-0 rotate-[1deg]">
-              CÓDIGO: CUTRE80
-            </div>
           </div>
         </div>
       </section>
