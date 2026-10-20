@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Navigation from './components/Navigation.jsx'
 import Footer from './components/Footer.jsx'
+import Inicio from './views/Inicio.jsx'
 import Catalogo from './views/Catalogo.jsx'
 import Login from './views/Login.jsx'
 import Registro from './views/Registro.jsx'
@@ -89,12 +90,13 @@ function App() {
   }, [token, usuario])
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-on-surface">
+    <div className="min-h-screen flex flex-col bg-comic-bg text-cream font-montserrat selection:bg-comic-yellow selection:text-ink-black">
       <Navigation usuario={usuario} onLogout={handleLogout} cantidadCarrito={cantidadCarrito} />
       <main className="w-full pt-[72px] flex-1">
         {sesionLista ? (
           <Routes>
-            <Route path="/" element={<Catalogo token={token} usuario={usuario} onCarritoActualizado={recargarCantidadCarrito} />} />
+            <Route path="/" element={<Inicio token={token} usuario={usuario} />} />
+            <Route path="/catalogo" element={<Catalogo token={token} usuario={usuario} onCarritoActualizado={recargarCantidadCarrito} />} />
             <Route path="/login" element={<Login onLogin={handleLogin} />} />
             <Route path="/registro" element={<Registro onLogin={handleLogin} />} />
             <Route path="/carrito" element={<Carrito token={token} onCarritoActualizado={recargarCantidadCarrito} />} />

@@ -35,12 +35,19 @@
   --color-cream: #FFF8E7;
   --color-card-surface: #FFFFFF;
   --color-ink-black: #000000;
-  --color-muted-gray: #6B7280;
+  --color-muted-gray: #71717A;
+  --color-comic-bg: #0F0E17;
+  --color-comic-yellow: #FFD700;
+  --color-comic-red: #E53935;
+  --color-surface-dark: #181622;
+  --color-surface-darker: #12111A;
   --color-inverse-surface: #e5e0ee;
   --color-inverse-on-surface: #312f39;
   --color-inverse-primary: #705d00;
 
   /* Font families */
+  --font-bangers: "Bangers", cursive;
+  --font-montserrat: "Montserrat", sans-serif;
   --font-headline-lg: "Bebas Neue", "Impact", sans-serif;
   --font-headline-md: "Bebas Neue", "Impact", sans-serif;
   --font-headline-sm: "Bebas Neue", "Impact", sans-serif;
@@ -113,6 +120,28 @@
   --spacing-gutter-sm: 1rem;
   --spacing-margin: 2rem;
   --spacing-margin-sm: 1rem;
+
+  /* Shadows */
+  --shadow-comic: 4px 4px 0px #000000;
+  --shadow-comic-lg: 6px 6px 0px #000000;
+  --shadow-comic-yellow: 4px 4px 0px #FFD700;
+  --shadow-comic-red: 4px 4px 0px #E53935;
+}
+
+.comic-border {
+  border: 3px solid #000000;
+}
+.comic-shadow {
+  box-shadow: 4px 4px 0px #000000;
+}
+.comic-shadow-lg {
+  box-shadow: 6px 6px 0px #000000;
+}
+.comic-shadow-red {
+  box-shadow: 4px 4px 0px #E53935;
+}
+.comic-shadow-yellow {
+  box-shadow: 4px 4px 0px #FFD700;
 }
 
 * {
