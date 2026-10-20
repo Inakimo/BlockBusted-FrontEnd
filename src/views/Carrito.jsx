@@ -3,13 +3,11 @@ import { useNavigate } from 'react-router-dom'
 
 const URL_BASE = 'http://localhost:4002'
 
-function Carrito({ token }) {
+function Carrito({ token, onCarritoActualizado }) {
   const [carrito, setCarrito] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
   const [confirmando, setConfirmando] = useState(false)
-  const [cupon, setCupon] = useState('')
-  const [cuponAplicado, setCuponAplicado] = useState(false)
   const navigate = useNavigate()
 
   function cargarCarrito() {
@@ -58,6 +56,7 @@ function Carrito({ token }) {
           return response.json().then((data) => { alert(data.message) })
         }
         cargarCarrito()
+        if (onCarritoActualizado) onCarritoActualizado()
       })
       .catch((err) => { console.error('Error al cambiar cantidad', err) })
   }
@@ -73,6 +72,7 @@ function Carrito({ token }) {
           return
         }
         cargarCarrito()
+        if (onCarritoActualizado) onCarritoActualizado()
       })
       .catch((err) => { console.error('Error al quitar item', err) })
   }
@@ -88,6 +88,7 @@ function Carrito({ token }) {
           return
         }
         cargarCarrito()
+        if (onCarritoActualizado) onCarritoActualizado()
       })
       .catch((err) => { console.error('Error al vaciar carrito', err) })
   }
@@ -108,6 +109,7 @@ function Carrito({ token }) {
           })
         }
         return response.json().then(() => {
+          if (onCarritoActualizado) onCarritoActualizado()
           navigate('/mis-ordenes')
         })
       })
@@ -115,11 +117,6 @@ function Carrito({ token }) {
         console.error('Error al confirmar compra', err)
         setConfirmando(false)
       })
-  }
-
-  function handleAplicarCupon() {
-    if (cupon.trim() === '') return
-    setCuponAplicado(true)
   }
 
   if (cargando) {
@@ -140,6 +137,15 @@ function Carrito({ token }) {
 
   const items = carrito && carrito.items ? carrito.items : []
 
+  let totalCarrito = 0
+  for (const it of items) {
+    const p = it.pelicula
+    if (p) {
+      const pf = p.descuentoPorcentaje > 0 ? parseInt(p.precio - p.precio * p.descuentoPorcentaje / 100) : p.precio
+      totalCarrito = totalCarrito + pf * it.cantidad
+    }
+  }
+
   return (
     <div className="relative w-full overflow-hidden pb-space-xl">
       {/* Ambient decors */}
@@ -149,19 +155,6 @@ function Carrito({ token }) {
       </div>
 
       <div className="relative max-w-7xl mx-auto px-margin-sm lg:px-margin pt-space-lg">
-        {/* Top ticker */}
-        <div className="w-full bg-primary-container text-ink-black py-1.5 px-space-md mb-space-lg flex items-center justify-between shadow-[4px_4px_0_#000000]" style={{ transform: 'rotate(-0.6deg)' }}>
-          <div className="flex items-center gap-space-sm font-label-sm text-label-sm tracking-wider uppercase">
-            <span className="material-symbols-outlined text-label-lg">videocam</span>
-            <span>ESTADO DEL SISTEMA: MOVIOLA ACTIVA · SERVICIO DE REBOBINADO INCLUIDO</span>
-          </div>
-          <div className="hidden md:flex items-center gap-space-md font-label-sm text-label-sm uppercase tracking-widest">
-            <span>ALQUILER DE FIN DE SEMANA</span>
-            <span>•</span>
-            <span>ENTREGA EN CAJA A PRUEBA DE MAGNÉTICA</span>
-          </div>
-        </div>
-
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-space-md mb-space-lg pb-space-md">
           <div className="space-y-space-xs">
@@ -177,9 +170,6 @@ function Carrito({ token }) {
             <h1 className="font-headline-lg text-display-lg text-cream tracking-wide drop-shadow-[4px_4px_0_#000000] uppercase">
               Mi carrito
             </h1>
-            <p className="font-body-sm text-body-sm text-on-surface-variant max-w-xl">
-              Revisa tus cintas magnéticas antes de pasar por el mostrador de caja. ¡Recuerda devolverlas rebobinadas para evitar recargos de $50!
-            </p>
           </div>
           {items.length > 0 && (
             <div className="flex items-center gap-space-sm self-start md:self-end">
@@ -210,7 +200,7 @@ function Carrito({ token }) {
                 const peli = item.pelicula
                 const precio = peli && peli.precio
                 const descuento = peli && peli.descuentoPorcentaje
-                const precioFinal = peli && descuento > 0 ? precio - precio * descuento / 100 : precio
+                const precioFinal = peli && descuento > 0 ? parseInt(precio - precio * descuento / 100) : precio
                 const subtotal = precioFinal * item.cantidad
                 const foto = peli && peli.fotos && peli.fotos.length > 0 && peli.fotos[0].url
 
@@ -361,7 +351,7 @@ function Carrito({ token }) {
                 <div className="space-y-space-sm font-body-sm">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-gray font-semibold">Subtotal ({items.length} {items.length === 1 ? 'cinta' : 'cintas'})</span>
-                    <span className="font-bold text-ink-black">Ver abajo</span>
+                    <span className="font-bold text-ink-black">${totalCarrito}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-gray font-semibold flex items-center gap-1">
@@ -371,30 +361,6 @@ function Carrito({ token }) {
                     <span className="font-bold text-primary-fixed-dim uppercase tracking-wider bg-ink-black px-1.5 py-0.5 text-xs">
                       GRATIS
                     </span>
-                  </div>
-
-                  {/* Coupon */}
-                  <div className="pt-space-xs">
-                    <label className="block font-label-sm text-[11px] text-muted-gray uppercase mb-1 tracking-wider" htmlFor="coupon-input">
-                      ¿Cupón de Socio VIP?
-                    </label>
-                    <div className="flex items-center shadow-[2px_2px_0_#000000]">
-                      <input
-                        id="coupon-input"
-                        type="text"
-                        value={cupon}
-                        onChange={(e) => setCupon(e.target.value)}
-                        placeholder="EJ: REWIND89"
-                        className="w-full bg-cream text-ink-black font-label-md text-label-md px-space-sm py-1.5 uppercase placeholder:text-muted-gray text-xs focus:outline-none focus:bg-card-surface border-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleAplicarCupon}
-                        className={`font-label-sm text-label-sm px-space-sm py-1.5 uppercase transition-colors text-xs whitespace-nowrap border-none cursor-pointer ${cuponAplicado ? 'bg-secondary-container text-cream' : 'bg-ink-black text-primary-container hover:bg-surface-container-high'}`}
-                      >
-                        {cuponAplicado ? '¡APLICADO!' : 'APLICAR'}
-                      </button>
-                    </div>
                   </div>
 
                   <div className="pt-space-sm" style={{ borderBottom: '4px double #000000' }}></div>
@@ -411,7 +377,7 @@ function Carrito({ token }) {
                     </div>
                     <div className="text-right">
                       <span className="font-headline-lg text-headline-lg text-secondary-container leading-none drop-shadow-[2px_2px_0_#000000]">
-                        {carrito && carrito.total !== undefined ? `$${carrito.total}` : '—'}
+                        ${totalCarrito}
                       </span>
                     </div>
                   </div>

@@ -3,7 +3,7 @@ import TarjetaPelicula from '../components/TarjetaPelicula.jsx'
 
 const URL_BASE = 'http://localhost:4002'
 
-function Catalogo({ token, usuario }) {
+function Catalogo({ token, usuario, onCarritoActualizado }) {
   const [peliculas, setPeliculas] = useState([])
   const [categorias, setCategorias] = useState([])
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('')
@@ -59,6 +59,7 @@ function Catalogo({ token, usuario }) {
         }
         setMensajeCarrito({ tipo: 'exito', texto: '¡Película agregada al carrito!' })
         setTimeout(() => setMensajeCarrito(null), 3000)
+        if (onCarritoActualizado) onCarritoActualizado()
       })
       .catch((error) => {
         console.error('Error al agregar al carrito', error)
@@ -115,7 +116,6 @@ function Catalogo({ token, usuario }) {
               >
                 ESTANTERÍA PRINCIPAL
               </span>
-              <span className="text-secondary-fixed text-label-sm font-label-sm tracking-widest">• PASILLO 04</span>
             </div>
             <h1
               className="font-display-lg text-display-lg text-cream tracking-wider uppercase leading-none mt-1"
@@ -152,37 +152,6 @@ function Catalogo({ token, usuario }) {
                 arrow_drop_down
               </span>
             </div>
-          </div>
-        </div>
-
-        {/* Promo banner */}
-        <div
-          className="w-full bg-surface-container-low shadow-[4px_4px_0px_#000000] p-space-sm sm:p-space-md flex flex-col sm:flex-row items-center justify-between gap-space-sm relative overflow-hidden"
-          style={{ border: '3px solid #ffd700', borderRadius: '12px' }}
-        >
-          <div className="flex items-center gap-space-sm z-10">
-            <div
-              className="w-10 h-10 bg-primary-container text-ink-black flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000000]"
-              style={{ border: '2px solid #000000', borderRadius: '4px' }}
-            >
-              <span className="material-symbols-outlined text-headline-sm">videocam</span>
-            </div>
-            <div>
-              <span className="font-headline-sm text-headline-sm text-primary tracking-wide block uppercase">
-                OFERTA MARTES DE CINTAS GASTADAS
-              </span>
-              <p className="font-body-sm text-body-sm text-on-surface-variant">
-                Lleva 3 VHS y la devolución es gratis antes del viernes al anochecer. ¡No olvides rebobinar!
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-space-xs z-10 shrink-0">
-            <span
-              className="bg-secondary-container text-cream font-label-sm text-label-sm px-space-sm py-1 shadow-[2px_2px_0px_#000000] uppercase"
-              style={{ border: '2px solid #000000' }}
-            >
-              CUPÓN: REWIND99
-            </span>
           </div>
         </div>
 

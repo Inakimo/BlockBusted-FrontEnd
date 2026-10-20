@@ -11,7 +11,7 @@ function TarjetaPelicula({ pelicula, token, usuario, onAgregarAlCarrito }) {
 
   const primeraFoto = pelicula.fotos && pelicula.fotos.length > 0 ? pelicula.fotos[0].url : null
   const tieneDescuento = pelicula.descuentoPorcentaje > 0
-  const precioFinal = pelicula.precio - pelicula.precio * pelicula.descuentoPorcentaje / 100
+  const precioFinal = parseInt(pelicula.precio - pelicula.precio * pelicula.descuentoPorcentaje / 100)
 
   function handleAgregar() {
     onAgregarAlCarrito(pelicula.id, cantidad)

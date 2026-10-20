@@ -6,9 +6,7 @@ function Footer() {
 
           <div className="md:col-span-2 space-y-space-sm">
             <div className="flex items-center gap-space-sm">
-              <span className="font-headline-lg text-headline-lg text-primary-container tracking-wider drop-shadow-[2px_2px_0_#a90111]">
-                BLOCKBUSTED VHS & CASSETTES
-              </span>
+              <img src="/logo.png" alt="BlockBusted" className="h-20 w-auto object-contain drop-shadow-[3px_3px_0_#a90111]" />
             </div>
             <p className="font-body-sm text-body-sm text-on-surface-variant max-w-md">
               Tu videoclub de confianza en línea. Las mejores joyas en VHS, Betamax y cartuchos retro con entrega directa a tu cueva de cinéfilo nostálgico. Rebobinar es educación.

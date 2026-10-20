@@ -207,15 +207,6 @@ function MiPerfil({ token, usuario, onActualizarUsuario }) {
             </div>
           </div>
 
-          {/* Punch-card stat */}
-          <div className="bg-surface-container-low text-cream p-3 flex items-center justify-between" style={{ border: '2px solid #000000', borderRadius: '4px' }}>
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary-container text-label-lg">movie</span>
-              <span className="font-label-sm text-label-sm uppercase tracking-wide">Cintas Rebobinadas a Tiempo:</span>
-            </div>
-            <span className="font-headline-sm text-headline-sm text-primary-container leading-none">28 / 28</span>
-          </div>
-
           <div className="pt-space-xs">
             <button
               type="submit"

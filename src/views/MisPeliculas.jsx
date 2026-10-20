@@ -485,7 +485,7 @@ function MisPeliculas({ token, usuario }) {
               const esteAbierto = panelAbierto && panelAbierto.id === pelicula.id
               const esTipo = (t) => esteAbierto && panelAbierto.tipo === t
               const tieneDescuento = pelicula.descuentoPorcentaje > 0
-              const precioFinal = pelicula.precio - pelicula.precio * pelicula.descuentoPorcentaje / 100
+              const precioFinal = parseInt(pelicula.precio - pelicula.precio * pelicula.descuentoPorcentaje / 100)
 
               return (
                 <article
@@ -822,10 +822,10 @@ function MisPeliculas({ token, usuario }) {
             </div>
             <div>
               <div className="font-headline-sm text-headline-sm text-primary-container uppercase">
-                REGLAMENTO DE LA BAHÍA DE VENDEDORES
+                Panel del vendedor
               </div>
               <div className="font-body-sm text-body-sm text-on-surface-variant">
-                Toda cinta magnética cargada debe probarse en reproductor multizona antes de marcar stock disponible.
+                Administrá tus películas: creá nuevas, actualizá precio, stock, descuento y fotos.
               </div>
             </div>
           </div>

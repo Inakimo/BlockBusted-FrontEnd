@@ -232,29 +232,6 @@ function Categorias({ token }) {
                 </button>
               </form>
             </div>
-
-            {/* Guide */}
-            <div className="bg-surface-container-high border-[3px] border-ink-black shadow-[4px_4px_0px_#000000] p-space-md text-on-surface">
-              <div className="flex items-center gap-space-xs mb-space-xs">
-                <span className="bg-secondary-container text-cream px-space-xs py-[2px] font-label-sm text-label-sm uppercase font-extrabold border border-ink-black">
-                  REGLAMENTO DE PASILLOS
-                </span>
-                <span className="font-headline-sm text-headline-sm text-primary-container">BLOCKBUSTED ARCHIVE</span>
-              </div>
-              <p className="font-body-sm text-body-sm text-on-surface-variant mb-space-sm leading-relaxed">
-                Las categorías eliminadas ocultan los títulos asociados en el escaparate público del catálogo general. No uses caracteres especiales ni duplicados.
-              </p>
-              <div className="grid grid-cols-2 gap-space-xs font-label-sm text-label-sm">
-                <div className="bg-surface-container-lowest p-space-xs border border-ink-black flex items-center gap-space-xs">
-                  <span className="material-symbols-outlined text-primary-container text-[18px]">verified</span>
-                  <span>MÁX. 50 CARACTERES</span>
-                </div>
-                <div className="bg-surface-container-lowest p-space-xs border border-ink-black flex items-center gap-space-xs">
-                  <span className="material-symbols-outlined text-primary-container text-[18px]">lock_reset</span>
-                  <span>BAJA LÓGICA (SOFT)</span>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* RIGHT: Tabla */}
@@ -374,14 +351,6 @@ function Categorias({ token }) {
               </div>
             </div>
 
-            <div className="mt-space-md bg-secondary-container text-cream p-space-sm border-2 border-ink-black shadow-[4px_4px_0px_#000000] flex items-center justify-between flex-wrap gap-space-xs">
-              <div className="flex items-center gap-space-xs">
-                <span className="material-symbols-outlined text-primary-container">info</span>
-                <span className="font-label-sm text-label-sm uppercase font-bold tracking-wide">
-                  AVISO AL ENCARGADO: LA EDICIÓN DE GÉNEROS AFECTA EL BUSCADOR GLOBAL DEL FRONTEND.
-                </span>
-              </div>
-            </div>
           </div>
         </div>
       </div>

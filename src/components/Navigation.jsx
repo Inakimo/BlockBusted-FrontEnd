@@ -1,23 +1,13 @@
 import { Link } from 'react-router-dom'
 
-function Navigation({ usuario, onLogout }) {
+function Navigation({ usuario, onLogout, cantidadCarrito }) {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-ink-black border-b-4 border-primary-container shadow-[0_4px_0_#a90111]">
       <div className="h-[72px] max-w-7xl mx-auto px-margin-sm lg:px-margin flex items-center justify-between gap-space-md">
 
-        {/* Logo + brand */}
-        <Link to="/" className="flex items-center gap-space-sm group transition-transform active:translate-x-0.5 active:translate-y-0.5">
-          <div className="border-2 border-ink-black shadow-[2px_2px_0px_#ffd700] overflow-hidden rounded bg-ink-black flex items-center justify-center">
-            <img src="/logo.png" alt="BlockBusted" className="w-10 h-10 object-contain" />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-headline-lg text-headline-lg leading-none tracking-wider text-primary-container drop-shadow-[2px_2px_0_#a90111] group-hover:text-primary transition-colors">
-              BLOCKBUSTED
-            </span>
-            <span className="font-label-sm text-label-sm tracking-widest text-cream uppercase -mt-1 hidden sm:block">
-              Retro Video Club
-            </span>
-          </div>
+        {/* Logo */}
+        <Link to="/" className="flex items-center group transition-transform active:translate-x-0.5 active:translate-y-0.5">
+          <img src="/logo.png" alt="BlockBusted" className="h-16 w-auto object-contain drop-shadow-[2px_2px_0px_#a90111] group-hover:scale-105 transition-transform" />
         </Link>
 
         {/* Navigation links */}
@@ -42,8 +32,17 @@ function Navigation({ usuario, onLogout }) {
 
           {usuario && usuario.role === 'COMPRADOR' && (
             <>
-              <Link to="/carrito" className="font-label-md text-label-md tracking-wider text-cream uppercase hover:text-primary-container transition-colors">
-                Carrito
+              <Link to="/carrito" className="relative font-label-md text-label-md tracking-wider text-cream uppercase hover:text-primary-container transition-colors inline-flex items-center gap-1">
+                <span className="material-symbols-outlined text-[18px]">shopping_cart</span>
+                <span>Carrito</span>
+                {cantidadCarrito > 0 && (
+                  <span
+                    className="ml-1 inline-flex items-center justify-center min-w-[22px] h-[22px] px-1 bg-secondary-container text-cream font-label-sm text-label-sm leading-none shadow-[2px_2px_0px_#000000]"
+                    style={{ border: '2px solid #000000', borderRadius: '999px' }}
+                  >
+                    {cantidadCarrito}
+                  </span>
+                )}
               </Link>
               <Link to="/mis-ordenes" className="font-label-md text-label-md tracking-wider text-cream uppercase hover:text-primary-container transition-colors">
                 Mis órdenes
