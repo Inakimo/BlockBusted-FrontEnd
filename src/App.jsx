@@ -17,20 +17,56 @@ import DetallePelicula from './views/DetallePelicula.jsx'
 const URL_BASE = 'http://localhost:4002'
 
 function App() {
-  const [token, setToken] = useState(null)
+  const [token, setToken] = useState(localStorage.getItem('token'))
   const [usuario, setUsuario] = useState(null)
   const [cantidadCarrito, setCantidadCarrito] = useState(0)
+  const [sesionLista, setSesionLista] = useState(false)
 
   function handleLogin(nuevoToken, nuevoUsuario) {
+    localStorage.setItem('token', nuevoToken)
     setToken(nuevoToken)
     setUsuario(nuevoUsuario)
   }
 
   function handleLogout() {
+    localStorage.removeItem('token')
     setToken(null)
     setUsuario(null)
     setCantidadCarrito(0)
   }
+
+  useEffect(() => {
+    if (!token) {
+      setSesionLista(true)
+      return
+    }
+    if (usuario) {
+      setSesionLista(true)
+      return
+    }
+
+    fetch(`${URL_BASE}/api/usuarios/me`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          localStorage.removeItem('token')
+          setToken(null)
+          setSesionLista(true)
+          return
+        }
+        return response.json().then((data) => {
+          setUsuario(data)
+          setSesionLista(true)
+        })
+      })
+      .catch((err) => {
+        console.error('Error al restaurar sesión', err)
+        localStorage.removeItem('token')
+        setToken(null)
+        setSesionLista(true)
+      })
+  }, [token])
 
   function recargarCantidadCarrito() {
     if (!token || !usuario || usuario.role !== 'COMPRADOR') return
@@ -56,19 +92,25 @@ function App() {
     <div className="min-h-screen flex flex-col bg-background text-on-surface">
       <Navigation usuario={usuario} onLogout={handleLogout} cantidadCarrito={cantidadCarrito} />
       <main className="w-full pt-[72px] flex-1">
-        <Routes>
-          <Route path="/" element={<Catalogo token={token} usuario={usuario} onCarritoActualizado={recargarCantidadCarrito} />} />
-          <Route path="/login" element={<Login onLogin={handleLogin} />} />
-          <Route path="/registro" element={<Registro onLogin={handleLogin} />} />
-          <Route path="/carrito" element={<Carrito token={token} onCarritoActualizado={recargarCantidadCarrito} />} />
-          <Route path="/mis-ordenes" element={<MisOrdenes token={token} />} />
-          <Route path="/mis-peliculas" element={<MisPeliculas token={token} usuario={usuario} />} />
-          <Route path="/mi-perfil" element={<MiPerfil token={token} usuario={usuario} onActualizarUsuario={setUsuario} />} />
-          <Route path="/categorias" element={<Categorias token={token} />} />
-          <Route path="/usuarios" element={<Usuarios token={token} />} />
-          <Route path="/ordenes" element={<OrdenesAdmin token={token} />} />
-          <Route path="/pelicula" element={<DetallePelicula token={token} usuario={usuario} onCarritoActualizado={recargarCantidadCarrito} />} />
-        </Routes>
+        {sesionLista ? (
+          <Routes>
+            <Route path="/" element={<Catalogo token={token} usuario={usuario} onCarritoActualizado={recargarCantidadCarrito} />} />
+            <Route path="/login" element={<Login onLogin={handleLogin} />} />
+            <Route path="/registro" element={<Registro onLogin={handleLogin} />} />
+            <Route path="/carrito" element={<Carrito token={token} onCarritoActualizado={recargarCantidadCarrito} />} />
+            <Route path="/mis-ordenes" element={<MisOrdenes token={token} />} />
+            <Route path="/mis-peliculas" element={<MisPeliculas token={token} usuario={usuario} />} />
+            <Route path="/mi-perfil" element={<MiPerfil token={token} usuario={usuario} onActualizarUsuario={setUsuario} />} />
+            <Route path="/categorias" element={<Categorias token={token} />} />
+            <Route path="/usuarios" element={<Usuarios token={token} />} />
+            <Route path="/ordenes" element={<OrdenesAdmin token={token} />} />
+            <Route path="/pelicula" element={<DetallePelicula token={token} usuario={usuario} onCarritoActualizado={recargarCantidadCarrito} />} />
+          </Routes>
+        ) : (
+          <div className="w-full py-space-xl flex items-center justify-center">
+            <p className="font-headline-md text-headline-md text-cream uppercase">Restaurando sesión...</p>
+          </div>
+        )}
       </main>
       <Footer />
     </div>
