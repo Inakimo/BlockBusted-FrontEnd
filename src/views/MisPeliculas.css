@@ -1,0 +1,292 @@
+.mp-titulo {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #e5e5e5;
+  margin: 0 0 1.5rem 0;
+}
+
+.mp-seccion {
+  background-color: #1f1f1f;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.mp-subtitulo {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #e5e5e5;
+  margin: 0 0 1.25rem 0;
+}
+
+.mp-error {
+  background-color: #3a1a1a;
+  color: #f44336;
+  border: 1px solid #5a2d2d;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.mp-form-crear {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.mp-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+}
+
+.mp-fila {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.mp-fila-corta {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.mp-label {
+  font-size: 0.82rem;
+  color: #808080;
+  font-weight: 500;
+}
+
+.mp-input {
+  background-color: #2d2d2d;
+  color: #e5e5e5;
+  border: 1px solid #3d3d3d;
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+
+.mp-input:focus {
+  outline: none;
+  border-color: #E50914;
+}
+
+.mp-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.mp-btn-primario {
+  background-color: #E50914;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.6rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  white-space: nowrap;
+}
+
+.mp-btn-primario:hover {
+  background-color: #f40612;
+}
+
+.mp-btn-primario:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mp-btn-cancelar {
+  background: none;
+  border: 1px solid #3d3d3d;
+  color: #808080;
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.mp-btn-cancelar:hover {
+  border-color: #808080;
+  color: #e5e5e5;
+}
+
+/* Lista de películas */
+.mp-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mp-card {
+  background-color: #1f1f1f;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.mp-card-encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.mp-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.mp-card-titulo {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #e5e5e5;
+  margin: 0 0 0.25rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mp-card-meta {
+  font-size: 0.82rem;
+  color: #808080;
+  margin: 0;
+}
+
+.mp-card-acciones {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.mp-btn-accion {
+  background-color: #2d2d2d;
+  color: #e5e5e5;
+  border: none;
+  border-radius: 5px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  white-space: nowrap;
+}
+
+.mp-btn-accion:hover {
+  background-color: #3d3d3d;
+}
+
+.mp-btn-eliminar {
+  background: none;
+  border: none;
+  color: #808080;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.4rem 0.5rem;
+  transition: color 0.15s;
+}
+
+.mp-btn-eliminar:hover {
+  color: #E50914;
+}
+
+/* Paneles inline */
+.mp-panel {
+  padding: 1.25rem;
+  border-top: 1px solid #2d2d2d;
+  background-color: #171717;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.mp-panel-titulo {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #808080;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.mp-panel-botones {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Fotos */
+.mp-fotos-lista {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.mp-foto-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.mp-foto-img {
+  width: 100px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #2d2d2d;
+}
+
+.mp-btn-quitar-foto {
+  background: none;
+  border: none;
+  color: #808080;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.mp-btn-quitar-foto:hover {
+  color: #E50914;
+}
+
+.mp-sin-fotos {
+  font-size: 0.85rem;
+  color: #808080;
+  margin: 0;
+}
+
+.estado-mensaje {
+  text-align: center;
+  color: #808080;
+  padding: 4rem 0;
+  font-size: 1rem;
+}
+
+.estado-error {
+  text-align: center;
+  color: #E50914;
+  padding: 4rem 0;
+  font-size: 1rem;
+}
+
+@media screen and (max-width: 768px) {
+  .mp-card-encabezado {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .mp-fila {
+    flex-direction: column;
+  }
+}

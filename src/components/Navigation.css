@@ -1,0 +1,87 @@
+.nav-header {
+  background-color: #0a0a0a;
+  border-bottom: 1px solid #2d2d2d;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-logo {
+  font-size: 1.4rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #E50914;
+  text-decoration: none;
+}
+
+.nav-logo:hover {
+  color: #f40612;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-link {
+  color: #b3b3b3;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: color 0.15s;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.nav-link:hover {
+  color: #e5e5e5;
+}
+
+.nav-btn {
+  background-color: #E50914;
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.45rem 1rem;
+  border-radius: 4px;
+  transition: background-color 0.15s;
+}
+
+.nav-btn:hover {
+  background-color: #f40612;
+}
+
+.nav-logout {
+  color: #808080;
+}
+
+.nav-logout:hover {
+  color: #e5e5e5;
+}
+
+@media screen and (max-width: 768px) {
+  .nav-links {
+    gap: 1rem;
+  }
+
+  .nav-logo {
+    font-size: 1.1rem;
+  }
+}

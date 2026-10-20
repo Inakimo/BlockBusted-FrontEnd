@@ -1,0 +1,167 @@
+.carrito-contenedor {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.carrito-vacio {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.carrito-encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.carrito-titulo {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #e5e5e5;
+  margin: 0;
+}
+
+.carrito-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.carrito-item {
+  background-color: #1f1f1f;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.item-info {
+  flex: 1;
+}
+
+.item-titulo {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e5e5e5;
+  margin: 0 0 0.2rem 0;
+}
+
+.item-meta {
+  font-size: 0.82rem;
+  color: #808080;
+  margin: 0;
+}
+
+.item-controles {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #2d2d2d;
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+}
+
+.cantidad-btn {
+  background: none;
+  border: none;
+  color: #e5e5e5;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0.1rem 0.4rem;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.cantidad-btn:hover {
+  color: #E50914;
+}
+
+.cantidad-valor {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #e5e5e5;
+  min-width: 1.5rem;
+  text-align: center;
+}
+
+.btn-quitar {
+  background: none;
+  border: none;
+  color: #808080;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: color 0.15s;
+  padding: 0;
+}
+
+.btn-quitar:hover {
+  color: #E50914;
+}
+
+.carrito-pie {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 1rem;
+  border-top: 1px solid #2d2d2d;
+}
+
+.btn-primario {
+  background-color: #E50914;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.btn-primario:hover {
+  background-color: #f40612;
+}
+
+.btn-primario:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secundario {
+  background: none;
+  border: 1px solid #3d3d3d;
+  color: #808080;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.btn-secundario:hover {
+  border-color: #E50914;
+  color: #E50914;
+}
+
+.estado-mensaje {
+  text-align: center;
+  color: #808080;
+  padding: 4rem 0;
+  font-size: 1rem;
+}
+
+.estado-error {
+  text-align: center;
+  color: #E50914;
+  padding: 4rem 0;
+  font-size: 1rem;
+}
+
+@media screen and (max-width: 768px) {
+  .carrito-item {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+}
