@@ -79,7 +79,7 @@ function App() {
         if (!response.ok) return
         return response.json().then((data) => {
           const items = data && data.items ? data.items : []
-          setCantidadCarrito(items.length)
+          setCantidadCarrito(items.reduce((acc, it) => acc + (Number(it.cantidad) || 0), 0))
         })
       })
       .catch((err) => { console.error('Error al cargar cantidad del carrito', err) })

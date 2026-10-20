@@ -136,6 +136,7 @@ function Carrito({ token, onCarritoActualizado }) {
   }
 
   const items = carrito && carrito.items ? carrito.items : []
+  const totalCintas = items.reduce((acc, it) => acc + (Number(it.cantidad) || 0), 0)
 
   let totalCarrito = 0
   for (const it of items) {
@@ -350,7 +351,7 @@ function Carrito({ token, onCarritoActualizado }) {
                 {/* Breakdown */}
                 <div className="space-y-space-sm font-body-sm">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-gray font-semibold">Subtotal ({items.length} {items.length === 1 ? 'cinta' : 'cintas'})</span>
+                    <span className="text-muted-gray font-semibold">Subtotal ({totalCintas} {totalCintas === 1 ? 'cinta' : 'cintas'})</span>
                     <span className="font-bold text-ink-black">${totalCarrito}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
