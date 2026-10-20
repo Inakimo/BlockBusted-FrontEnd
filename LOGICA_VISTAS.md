@@ -1,453 +1,511 @@
-# Guía de estudio — Lógica de las vistas (BlockBusted Frontend)
+# Lógica de las vistas — BlockBusted Frontend
 
-Este documento explica, vista por vista, cómo funciona el frontend de BlockBusted. Está pensado para preparar una presentación oral: cada sección es corta, con bullets, tablas y los fragmentos de código que conviene saber de memoria.
+Documento de estudio para la presentación oral. Explica, para cada vista y componente, qué hace la parte de React: props, hooks, llamadas al backend, handlers, renderizado condicional e interacciones. Todo el proyecto respeta las reglas de clase (solo `useState` + `useEffect`, `fetch` con `.then().catch()`, nada de async/await, nada de optional chaining, etc.).
 
 ---
 
-## 0. Conceptos transversales
+## 0. Fundamentos comunes del proyecto
 
 ### 0.1 Estado global (en `App.jsx`)
 
-- Todo el estado global vive en `App.jsx` con dos `useState`:
-  - `const [token, setToken] = useState(null)` — JWT devuelto por el backend.
-  - `const [usuario, setUsuario] = useState(null)` — objeto `{ id, username, email, firstName, lastName, role }`.
-- `handleLogin(token, usuario)` setea los dos; se pasa como prop `onLogin` a `Login` y `Registro`.
-- `handleLogout()` setea los dos a `null` (cerrar sesión = perder el estado).
-- No se usa `localStorage` ni `useContext`: todo se pasa por props a las rutas (`<Catalogo token={token} usuario={usuario} />`, etc.).
-- Si recargás la página, se pierde la sesión. Es aceptable: lo dicta la regla "solo lo que vimos en clase".
+Hay solo cuatro variables de estado globales, todas en `App.jsx`, que se pasan por props a las vistas que las necesitan:
+
+| Estado | Valor inicial | Para qué sirve |
+| :--- | :--- | :--- |
+| `token` | `localStorage.getItem('token')` | JWT del usuario logueado. Si existe, se persiste en `localStorage`. |
+| `usuario` | `null` | Objeto con `{id, username, email, firstName, lastName, role}` traído de `/api/usuarios/me`. |
+| `cantidadCarrito` | `0` | Número de ítems del carrito. Lo muestra el "globo rojo" al lado del link del carrito. |
+| `sesionLista` | `false` | Flag para no renderizar las rutas hasta terminar de restaurar la sesión. |
+
+**Restauración de sesión** (al recargar la página, el token sigue en `localStorage`):
+
+```jsx
+useEffect(() => {
+  if (!token) { setSesionLista(true); return }
+  if (usuario) { setSesionLista(true); return }
+
+  fetch(`${URL_BASE}/api/usuarios/me`, {
+    headers: { 'Authorization': `Bearer ${token}` },
+  })
+    .then((response) => {
+      if (!response.ok) {
+        localStorage.removeItem('token')
+        setToken(null)
+        setSesionLista(true)
+        return
+      }
+      return response.json().then((data) => {
+        setUsuario(data)
+        setSesionLista(true)
+      })
+    })
+    .catch((err) => {
+      console.error('Error al restaurar sesión', err)
+      localStorage.removeItem('token')
+      setToken(null)
+      setSesionLista(true)
+    })
+}, [token])
+```
+
+Mientras `sesionLista` es `false`, se muestra un mensaje "Restaurando sesión...". Si el token ya no sirve (expiró, 401/403), se limpia `localStorage` y la UI vuelve al estado de "no logueado".
+
+**Login / logout:**
+
+- `handleLogin(nuevoToken, nuevoUsuario)` → guarda token en `localStorage`, llena los estados.
+- `handleLogout()` → borra token de `localStorage`, pone `token`/`usuario`/`cantidadCarrito` en null/0.
+
+**Callback para el carrito** (`recargarCantidadCarrito`): hace `GET /api/carrito` y guarda `items.length` en `cantidadCarrito`. Se pasa como prop `onCarritoActualizado` al `Catalogo`, al `Carrito` y a `DetallePelicula`, que la llaman después de cada mutación (agregar, cambiar cantidad, quitar, vaciar, confirmar compra).
+
+También corre automáticamente cuando cambia `token` o `usuario`:
+
+```jsx
+useEffect(() => { recargarCantidadCarrito() }, [token, usuario])
+```
 
 ### 0.2 Navegación condicional (`Navigation.jsx`)
 
-- Componente puramente visual: recibe `usuario` y `onLogout` como props.
-- Usa renderizado condicional con `&&` para mostrar enlaces según el rol:
-  - **Sin login** (`!usuario`): Catálogo, Iniciar sesión, Registrarse.
-  - **COMPRADOR**: Carrito, Mis órdenes.
-  - **VENDEDOR**: Mis películas.
-  - **ADMIN**: Categorías, Usuarios, Órdenes.
-  - **Siempre logueado**: enlace a Mi perfil + botón Salir (dispara `onLogout`).
-- Navegación con `<Link to="...">` de `react-router-dom`.
+El `<header>` recibe `usuario`, `onLogout` y `cantidadCarrito`. Según el rol, muestra links distintos con renderizado condicional usando `&&`:
 
-### 0.3 Patrones comunes de fetch
+- **Sin login:** Catálogo · Iniciar sesión · Registrarse.
+- **COMPRADOR:** Catálogo · Carrito (con globo rojo si `cantidadCarrito > 0`) · Mis órdenes.
+- **VENDEDOR:** Catálogo · Mis películas.
+- **ADMIN:** Catálogo · Categorías · Usuarios · Órdenes.
+- Si hay `usuario`: aparece link al perfil con el username y botón Salir que llama `onLogout`.
 
-Todas las vistas siguen el mismo esquema (sacado de `PostList.jsx` del demo):
+El globo del carrito se renderiza solo cuando `cantidadCarrito > 0`:
 
-```js
-fetch(`${URL_BASE}/api/algo`, {
-  headers: { 'Authorization': `Bearer ${token}` },
-})
-  .then((response) => {
-    if (!response.ok) {
-      // 403 → body vacío (Spring Security). No llames a response.json().
-      if (response.status === 403) { alert('No tenés permiso'); return }
-      return response.json().then((data) => { alert(data.message) })
-    }
-    return response.json().then((data) => { setAlgo(data) })
-  })
-  .catch((err) => { console.error('Error', err) })
+```jsx
+{cantidadCarrito > 0 && (
+  <span style={{ border: '2px solid #000000', borderRadius: '999px' }}>
+    {cantidadCarrito}
+  </span>
+)}
 ```
 
-Puntos clave que repiten todas las vistas:
-- `.then().catch()` (nada de `async/await`).
-- Chequeo de `response.ok` antes de `response.json()`.
-- Caso especial 403: no hay body, se avisa con `alert`.
-- Los `DELETE` del backend responden 200 con cuerpo vacío → no se llama a `response.json()`.
-- Listados paginados (`/api/peliculas`, `/api/categorias`) vienen envueltos: `data.content`.
+### 0.3 Patrones de fetch
+
+Todas las vistas repiten estos patrones:
+
+1. **GET con `.then().catch()`:**
+   ```js
+   fetch(URL)
+     .then((response) => response.json())
+     .then((data) => setAlgo(data))
+     .catch((err) => console.error('...', err))
+   ```
+2. **403 trae cuerpo vacío** (lo tira Spring Security). Antes de hacer `response.json()` se chequea `response.ok` y `response.status === 403`.
+3. **Listados paginados:** `GET /api/peliculas` y `GET /api/categorias` responden `{ content: [...] }`, por eso se usa `data.content`.
+4. **DELETE exitoso** → cuerpo vacío, no se llama `response.json()`.
+5. **Mensajes de error del backend:** se leen de `data.message`.
 
 ### 0.4 Reglas de clase cumplidas
 
-- Solo `useState` + `useEffect`. Nada de `useContext`, `useRef`, `useMemo`, `useReducer`, hooks personalizados.
-- Nada de `async/await`, siempre `.then().catch()`.
-- Nada de optional chaining (`?.`): se usa `objeto && objeto.prop`.
-- Nada de `localStorage`/`sessionStorage`.
-- Única dependencia extra: `react-router-dom` (y la librería de estilos elegida, Tailwind).
-- Validaciones simples con `if (campo.trim() === '')` + `alert`.
-- Listas renderizadas con `.map((x) => <Comp key={x.id} />)`.
+- Solo `useState` y `useEffect` (nada de `useRef`, `useContext`, `useMemo`, hooks custom).
+- `fetch` + `.then().catch()`, **nunca** `async/await` ni `axios`.
+- Sin optional chaining (`?.`) ni nullish coalescing (`??`). Se usa `&&` o `if`.
+- Sin `reduce`, `sort`, `forEach`, `join`, `split`, `Object.keys/entries`, `Math.*`, `toFixed`. Para redondear precios se usa `parseInt()`.
+- Para sumar totales se usan loops `for` (ver `Carrito.jsx` y `MisPeliculas.jsx`).
+- Única dependencia extra: `react-router-dom`.
+- `localStorage` sí se usa (el profesor dio luz verde para persistir el token).
 
 ---
 
-## 1. Catálogo (`src/views/Catalogo.jsx`)
+## 1. App (src/App.jsx)
 
-### Qué hace
-Vista pública que lista todas las películas en una grilla. Permite filtrar por categoría con un `<select>` y, si el usuario es COMPRADOR, agregar películas al carrito desde cada tarjeta. Es la ruta `/`.
+### 1.1 Qué hace
 
-### Props que recibe
-- `token` (string | null) — para autenticar el POST al carrito.
-- `usuario` (objeto | null) — para decidir si mostrar el botón "Agregar al carrito" en la tarjeta.
+Es el componente raíz. Define el estado global, hace la restauración de sesión y define las `<Routes>`. Monta `Navigation` arriba y `Footer` abajo.
 
-### Hooks usados
+### 1.2 Hooks usados
 
-| Variable | Inicial | Qué guarda |
-|---|---|---|
-| `peliculas` | `[]` | Lista de películas del backend |
-| `categorias` | `[]` | Categorías del `<select>` |
-| `categoriaSeleccionada` | `''` | ID de la categoría del filtro (string vacío = todas) |
-| `cargando` | `true` | Flag de carga |
-| `error` | `null` | Texto de error |
-| `mensajeCarrito` | `null` | Toast `{ tipo, texto }` tras agregar al carrito |
+| Hook | Para qué |
+| :--- | :--- |
+| `useState(token)` | Lee `localStorage.getItem('token')` al montar. |
+| `useState(usuario)` | Objeto del usuario logueado. |
+| `useState(cantidadCarrito)` | Contador para el globo del navbar. |
+| `useState(sesionLista)` | Gate para no renderizar `<Routes>` antes de restaurar sesión. |
+| `useEffect([token])` | Restaura `usuario` cuando hay token (ver sección 0.1). |
+| `useEffect([token, usuario])` | Recarga la cantidad del carrito al cambiar sesión. |
 
-Dos `useEffect`:
-- `[]` — Carga categorías una sola vez al montar.
-- `[categoriaSeleccionada]` — Carga películas cada vez que cambia el filtro. Dispara `setCargando(true)` al principio.
+### 1.3 Rutas
 
-### Fetch / endpoints
+| Ruta | Vista | Props relevantes |
+| :--- | :--- | :--- |
+| `/` | `Catalogo` | token, usuario, onCarritoActualizado |
+| `/login` | `Login` | onLogin |
+| `/registro` | `Registro` | onLogin |
+| `/carrito` | `Carrito` | token, onCarritoActualizado |
+| `/mis-ordenes` | `MisOrdenes` | token |
+| `/mis-peliculas` | `MisPeliculas` | token, usuario |
+| `/mi-perfil` | `MiPerfil` | token, usuario, onActualizarUsuario |
+| `/categorias` | `Categorias` | token |
+| `/usuarios` | `Usuarios` | token |
+| `/ordenes` | `OrdenesAdmin` | token |
+| `/pelicula` | `DetallePelicula` | token, usuario, onCarritoActualizado |
+
+### 1.4 Preguntas posibles
+
+- **¿Por qué `sesionLista`?** Para que, si refresco con el token en `localStorage`, no se dibuje el `Navigation` sin usuario (parecería que no estoy logueado). Esperamos a tener el perfil y recién renderizamos.
+- **¿Qué pasa si el token expiró?** `GET /api/usuarios/me` devuelve 401/403, limpiamos `localStorage` y seteamos `token = null`.
+
+---
+
+## 2. Navigation (src/components/Navigation.jsx)
+
+### 2.1 Qué hace
+
+Barra de navegación fija arriba. Muestra links distintos según el rol y el globo rojo del carrito. No tiene estado propio: solo props y renderizado condicional con `&&`.
+
+### 2.2 Props
+
+| Prop | Shape |
+| :--- | :--- |
+| `usuario` | `{id, username, role, ...}` o `null` |
+| `onLogout` | Función del padre que resetea sesión |
+| `cantidadCarrito` | Número |
+
+### 2.3 Interacciones destacables
+
+- **Globo del carrito:** span circular con borde negro que solo aparece si `cantidadCarrito > 0`.
+- Botón Salir llama `onLogout()` → se vacía el estado en `App.jsx`.
+- Toda la navegación es con `<Link to="...">` de `react-router-dom`.
+
+### 2.4 Preguntas posibles
+
+- **¿Cómo se actualiza el globo?** `App.jsx` llama `recargarCantidadCarrito()` después de cada acción del carrito y pasa el nuevo número por props.
+
+---
+
+## 3. Footer (src/components/Footer.jsx)
+
+### 3.1 Qué hace
+
+Pie de página puramente visual. No tiene estado, props ni fetch. Solo HTML/CSS con enlaces falsos para dar el aire "retro videoclub".
+
+### 3.2 Preguntas posibles
+
+- **¿Tiene lógica?** No, es un mockup estético.
+
+---
+
+## 4. TarjetaPelicula (src/components/TarjetaPelicula.jsx)
+
+### 4.1 Qué hace
+
+Tarjeta reutilizable del catálogo. Muestra foto, categoría, título, precio (con/sin descuento), stock. Si el usuario es COMPRADOR, agrega input de cantidad y botón "ALQUILAR".
+
+### 4.2 Props
+
+| Prop | Para qué |
+| :--- | :--- |
+| `pelicula` | Objeto `Pelicula` del backend |
+| `token` | Para habilitar/deshabilitar acciones |
+| `usuario` | Para saber el rol |
+| `onAgregarAlCarrito` | Función del padre `(peliculaId, cantidad)` |
+
+### 4.3 Hooks
+
+- `useState(cantidad)` = 1 → input de cantidad.
+- `useNavigate()` → para ir a `/pelicula` al clickear la foto o el título.
+
+### 4.4 Handlers
+
+- `handleVerDetalle()` → `navigate('/pelicula', { state: { peliculaId: pelicula.id } })`. Pasa el id vía router state en lugar de un parámetro de URL.
+- `handleAgregar()` → llama `onAgregarAlCarrito(pelicula.id, cantidad)`.
+
+### 4.5 Renderizado condicional
+
+- Si `tieneDescuento` (`descuentoPorcentaje > 0`): precio original tachado + precio final.
+- Si `pelicula.stock > 0`: input + botón; si no: cartel "Sin stock".
+- Botón solo visible si el usuario es COMPRADOR; si no, muestra un adorno con código BB-{id}.
+
+### 4.6 Preguntas posibles
+
+- **¿Cómo calculás el precio final?** `const precioFinal = parseInt(precio - precio * descuento / 100)`. Uso `parseInt` para evitar decimales (no puedo usar `toFixed` ni `Math.round`).
+
+---
+
+## 5. Catálogo (src/views/Catalogo.jsx)
+
+### 5.1 Qué hace
+
+Vista pública. Lista todas las películas (opcionalmente filtradas por categoría), permite al COMPRADOR agregarlas al carrito, muestra un toast al hacerlo.
+
+### 5.2 Props
+
+`token`, `usuario`, `onCarritoActualizado`.
+
+### 5.3 Hooks
+
+| State | Inicial | Para qué |
+| :--- | :--- | :--- |
+| `peliculas` | `[]` | Resultado del GET de películas |
+| `categorias` | `[]` | Para el `<select>` del filtro |
+| `categoriaSeleccionada` | `''` | Id del filtro activo |
+| `cargando` | `true` | Loader |
+| `error` | `null` | Mensaje de error |
+| `mensajeCarrito` | `null` | Toast `{tipo, texto}` |
+
+- `useEffect([])` → carga categorías una sola vez.
+- `useEffect([categoriaSeleccionada])` → re-hace el GET de películas cuando cambia el filtro.
+
+### 5.4 Endpoints
 
 | Método | URL | Cuándo |
-|---|---|---|
+| :--- | :--- | :--- |
 | GET | `/api/categorias` | Al montar |
-| GET | `/api/peliculas` o `/api/peliculas?categoriaId=X` | Al montar y al cambiar filtro |
-| POST | `/api/carrito/items` | Al apretar "Agregar al carrito" en una tarjeta |
+| GET | `/api/peliculas` o `/api/peliculas?categoriaId=X` | Al cambiar el filtro |
+| POST | `/api/carrito/items` body `{peliculaId, cantidad}` | Al hacer click en Alquilar |
 
-```js
-useEffect(() => {
-  setCargando(true)
-  const urlPeliculas = categoriaSeleccionada
-    ? `${URL_BASE}/api/peliculas?categoriaId=${categoriaSeleccionada}`
-    : `${URL_BASE}/api/peliculas`
-  fetch(urlPeliculas)
-    .then((r) => r.json())
-    .then((data) => { setPeliculas(data.content); setCargando(false) })
-    .catch(...)
-}, [categoriaSeleccionada])
-```
+### 5.5 Handlers
 
-### Handlers principales
-- `handleAgregarAlCarrito(peliculaId, cantidad)` — Se pasa como prop a cada `TarjetaPelicula`. Hace POST a `/api/carrito/items` con `{ peliculaId, cantidad }`. Si el backend responde con error (sin stock, por ejemplo), muestra el `data.message` como toast rojo por 4 segundos. Si sale bien, toast verde por 3 segundos. Usa `setTimeout` para esconderlo.
+- `handleAgregarAlCarrito(peliculaId, cantidad)` → POST al carrito. Si falla, muestra `data.message` en el toast rojo. Si funciona, toast verde y llama `onCarritoActualizado()` para refrescar el globo del navbar.
 
-### Renderizado condicional
-- `if (cargando) return <p>Cargando películas...</p>`
+### 5.6 Renderizado condicional
+
+- `if (cargando) return <p>Cargando...</p>`
 - `if (error) return <p>{error}</p>`
-- Si `peliculas.length === 0` → mensaje "Cintas no encontradas".
-- Si `mensajeCarrito` → toast flotante arriba a la derecha.
+- Si `peliculas.length === 0` → mensaje de "pasillo vacío"; si no, grid con `.map()` de `TarjetaPelicula`.
+- Toast flotante solo cuando `mensajeCarrito` no es null; se limpia con `setTimeout(..., 3000/4000)`.
 
-### Datos locales vs servidor
-- Servidor: `peliculas`, `categorias`.
-- Locales (solo UI): `categoriaSeleccionada`, `cargando`, `error`, `mensajeCarrito`.
+### 5.7 Preguntas posibles
 
-### Interacciones destacables
-- Toast temporal con `setTimeout` para auto-ocultarlo.
-- El filtro de categoría es reactivo: cambiarlo dispara un nuevo fetch gracias al `useEffect` con dependencia `[categoriaSeleccionada]`.
-
-### Preguntas que te pueden hacer
-- **¿Por qué dos `useEffect`?** Porque las categorías se cargan una sola vez (dependencia `[]`) y las películas se recargan cada vez que cambia el filtro (dependencia `[categoriaSeleccionada]`).
-- **¿Qué pasa si el usuario no está logueado y aprieta "Agregar"?** El botón solo se muestra si `usuario.role === 'COMPRADOR'`, así que no aparece. Además, el handler chequea `if (!token) return`.
-- **¿Por qué `data.content`?** Spring devuelve listados paginados como un objeto con la lista dentro de `content`.
+- **¿Por qué dos `useEffect`?** Uno para categorías (una vez), otro para películas (se re-dispara cada vez que cambia la categoría seleccionada).
 
 ---
 
-## 2. TarjetaPelicula (`src/components/TarjetaPelicula.jsx`)
+## 6. Login (src/views/Login.jsx)
 
-### Qué hace
-Componente reutilizable que muestra una película del catálogo (poster, título, precio, stock) y, si corresponde, el input de cantidad + botón "Alquilar". También permite ir al detalle haciendo clic en la imagen o el título.
+### 6.1 Qué hace
 
-### Props que recibe
-- `pelicula` (objeto) — forma `Pelicula` del backend.
-- `token` (string | null).
-- `usuario` (objeto | null).
-- `onAgregarAlCarrito(peliculaId, cantidad)` — función del padre.
+Formulario de inicio de sesión. Autentica, obtiene el perfil y llama `onLogin(token, usuario)` del padre para activar la sesión.
 
-### Hooks usados
-- `const [cantidad, setCantidad] = useState(1)` — cantidad local del input.
-- `const navigate = useNavigate()` — para ir al detalle.
+### 6.2 Hooks
 
-### Lógica
-- `primeraFoto` = `pelicula.fotos && pelicula.fotos.length > 0 ? pelicula.fotos[0].url : null`.
-- `tieneDescuento` = `pelicula.descuentoPorcentaje > 0`.
-- `precioFinal` = `pelicula.precio - pelicula.precio * pelicula.descuentoPorcentaje / 100`.
-- `handleVerDetalle()` → `navigate('/pelicula', { state: { peliculaId: pelicula.id } })`.
-- `handleAgregar()` → llama al callback del padre.
+`useState` para `email`, `password`, `mostrarPassword`, `error`, `cargando`. `useNavigate()` para redirigir a `/` después del login.
 
-### Renderizado condicional
-- Badge de descuento solo si `tieneDescuento`.
-- Precio tachado + precio con descuento, o solo precio original.
-- Si `usuario.role === 'COMPRADOR'`: input + botón o "Sin stock".
-- Si no es comprador: barra de código decorativa en el footer.
-
-### Preguntas que te pueden hacer
-- **¿Por qué usar `navigate` con `state` en vez de un path con ID?** No usamos `useParams` (prohibido). El objeto `state` se recupera con `useLocation` en `DetallePelicula`.
-- **¿Por qué el estado `cantidad` vive en la tarjeta y no en el catálogo?** Porque es un detalle de UI aislado de cada tarjeta.
-
----
-
-## 3. Login (`src/views/Login.jsx`)
-
-### Qué hace
-Formulario de inicio de sesión. Envía email + password al backend, obtiene el token JWT, luego pide el perfil del usuario y lo guarda en el estado global vía `onLogin`.
-
-### Props
-- `onLogin(token, usuario)` — callback a `App.jsx`.
-
-### Hooks
-
-| Variable | Inicial | Qué guarda |
-|---|---|---|
-| `email` | `''` | Input email |
-| `password` | `''` | Input password |
-| `mostrarPassword` | `false` | Toggle ver/ocultar |
-| `error` | `null` | Mensaje de error |
-| `cargando` | `false` | Flag de envío |
-
-Además `useNavigate()` para redirigir al catálogo tras loguearse.
-
-### Fetch
-
-```js
-fetch(`${URL_BASE}/api/v1/auth/authenticate`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ email, password }),
-})
-  .then((response) => {
-    if (!response.ok) { /* muestra data.message */ }
-    return response.json().then((data) => {
-      const token = data.access_token
-      fetch(`${URL_BASE}/api/usuarios/me`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      })
-        .then((r) => r.json())
-        .then((usuario) => { onLogin(token, usuario); navigate('/') })
-    })
-  })
-```
-
-Dos fetchs encadenados: autenticar → obtener perfil → `onLogin` + redirigir.
-
-### Handlers
-- `handleSubmit(e)` — Valida que email y password no estén vacíos con `trim()`. Hace el fetch doble.
-- `cargarRolRapido(email, password)` — Botones de acceso rápido (Comprador, Vendedor, Admin) que precargan credenciales de prueba.
-
-### Renderizado condicional
-- Banner de error si `error`.
-- Botón muestra "REBOBINANDO..." mientras `cargando`.
-- Toggle de icono visibility/visibility_off según `mostrarPassword`.
-
-### Preguntas que te pueden hacer
-- **¿Por qué dos llamadas al backend al loguearse?** Porque el JWT no trae el rol: hay que pedir `/api/usuarios/me` para saber quién es y qué puede hacer.
-- **¿Dónde se guarda el token?** En el `useState` de `App.jsx`. No se persiste.
-
----
-
-## 4. Registro (`src/views/Registro.jsx`)
-
-### Qué hace
-Formulario de registro para nuevos usuarios (COMPRADOR o VENDEDOR). Igual que Login pero con más campos. Al terminar: token → perfil → login automático.
-
-### Props
-- `onLogin(token, usuario)`.
-
-### Hooks
-`username`, `firstname`, `lastname`, `email`, `password` (todos `''`), `role` (`'COMPRADOR'`), `mostrarPassword` (`false`), `error` (`null`), `cargando` (`false`), + `useNavigate()`.
-
-### Fetch
+### 6.3 Endpoints
 
 | Método | URL | Body |
-|---|---|---|
-| POST | `/api/v1/auth/register` | `{ username, firstname, lastname, email, password, role }` |
-| GET | `/api/usuarios/me` | — (con token) |
+| :--- | :--- | :--- |
+| POST | `/api/v1/auth/authenticate` | `{email, password}` → `{access_token}` |
+| GET | `/api/usuarios/me` | con `Authorization: Bearer <token>` |
 
-Mismo encadenamiento que Login.
+### 6.4 Handlers
 
-### Handlers
-- `handleSubmit(e)` — Cinco validaciones con `trim()`, luego POST al register y GET al me.
+- `handleSubmit(e)`: valida con `trim() === ''`, hace el POST de auth, con el token hace un segundo fetch del perfil, llama `onLogin` y navega a `/`.
+- `cargarRolRapido(email, password)`: rellena los inputs con credenciales de prueba (botones Comprador / Vendedor / Admin).
 
-### Preguntas que te pueden hacer
-- **¿Por qué no permitís registrar ADMIN desde el frontend?** Porque sería un agujero de seguridad: el `<select>` solo tiene COMPRADOR y VENDEDOR.
-- **¿El rol se envía al backend?** Sí, en el body del register.
+### 6.5 Renderizado condicional
 
----
+- Banner de error solo si `error`.
+- Botón muestra "REBOBINANDO..." si `cargando === true`.
+- Input de contraseña cambia `type` según `mostrarPassword`.
 
-## 5. DetallePelicula (`src/views/DetallePelicula.jsx`)
+### 6.6 Preguntas posibles
 
-### Qué hace
-Vista de detalle de una película (ruta `/pelicula`). Recibe el ID por `location.state` (desde `TarjetaPelicula`). Muestra portada, galería de fotos, precio, descripción y, si es COMPRADOR, controles para agregar al carrito con cantidad +/-.
-
-### Props
-- `token`, `usuario`.
-
-### Hooks
-
-| Variable | Inicial | Qué guarda |
-|---|---|---|
-| `pelicula` | `null` | Objeto película |
-| `cargando` | `true` | Flag |
-| `error` | `null` | Mensaje |
-| `fotoActiva` | `0` | Índice de la foto grande |
-| `cantidad` | `1` | Cantidad a comprar |
-| `mensajeCarrito` | `null` | Toast |
-
-Además: `useLocation()` y `useNavigate()`.
-
-```js
-const peliculaId = location.state && location.state.peliculaId
-```
-
-### `useEffect`
-
-```js
-useEffect(() => {
-  if (!peliculaId) { navigate('/'); return }
-  fetch(`${URL_BASE}/api/peliculas/${peliculaId}`)
-    .then(...)
-}, [peliculaId])
-```
-
-Si no vino un ID en el state, redirige al catálogo.
-
-### Fetch
-- GET `/api/peliculas/:id` al montar.
-- POST `/api/carrito/items` al agregar (solo COMPRADOR).
-
-### Handlers
-- `handleAgregarAlCarrito()` — Si no hay token, redirige a `/login`. Si sí, hace el POST.
-- `disminuir()` / `aumentar()` — Ajustan `cantidad` dentro del rango `[1, stock]`.
-
-### Renderizado condicional
-- `cargando` → "Cargando película..."
-- `error` → mensaje de error.
-- `!pelicula` → `return null`.
-- Galería de miniaturas solo si `fotos.length > 1`.
-- Botones de agregar solo si `usuario.role === 'COMPRADOR' && stock > 0`.
-- Si no hay usuario y hay stock: botón "Iniciá sesión para comprar" que redirige a `/login`.
-
-### Preguntas que te pueden hacer
-- **¿Por qué pasás el ID por `state` y no por `useParams`?** Porque `useParams` no lo vimos en clase.
-- **¿Qué hace el `useEffect` si no hay `peliculaId`?** Redirige al catálogo con `navigate('/')`.
+- **¿Por qué dos fetch encadenados?** Porque el backend devuelve solo el token; el rol y los datos del usuario vienen de `/api/usuarios/me`.
 
 ---
 
-## 6. Carrito (`src/views/Carrito.jsx`)
+## 7. Registro (src/views/Registro.jsx)
 
-### Qué hace
-Muestra los items del carrito del COMPRADOR, permite cambiar cantidad, quitar items, vaciar el carrito y confirmar la compra. Al confirmar, redirige a Mis órdenes.
+### 7.1 Qué hace
 
-### Props
-- `token`.
+Formulario para crear cuenta. Igual que Login pero con más campos (`username`, `firstname`, `lastname`, `email`, `password`, `role`). Al registrar, hace el mismo flujo (token → perfil → `onLogin` → navegar a `/`).
 
-### Hooks
+### 7.2 Hooks
 
-| Variable | Inicial | Qué guarda |
-|---|---|---|
-| `carrito` | `null` | Objeto `{ id, items, total }` |
-| `cargando` | `true` | Flag |
-| `error` | `null` | Mensaje |
-| `confirmando` | `false` | Flag botón de confirmar |
-| `cupon` | `''` | Input cupón (solo visual) |
-| `cuponAplicado` | `false` | Toggle visual |
+`useState` para cada campo + `mostrarPassword`, `error`, `cargando`. `useNavigate()`.
 
-Además `useNavigate()`.
+### 7.3 Endpoint
 
-Función `cargarCarrito()` separada que hace el GET y se reutiliza después de cada acción.
+| Método | URL | Body |
+| :--- | :--- | :--- |
+| POST | `/api/v1/auth/register` | `{username, firstname, lastname, email, password, role}` |
+| GET | `/api/usuarios/me` | para traer el perfil con el token nuevo |
 
-### Fetch
+### 7.4 Handlers
+
+- `handleSubmit(e)`: validaciones con `trim()`, POST de registro, luego `/me`, luego `onLogin` + `navigate('/')`.
+
+### 7.5 Preguntas posibles
+
+- **¿Por qué solo COMPRADOR o VENDEDOR en el select?** Porque ADMIN solo lo asigna un ADMIN desde `Usuarios`.
+
+---
+
+## 8. Detalle de película (src/views/DetallePelicula.jsx)
+
+### 8.1 Qué hace
+
+Vista compacta (sin scroll) del detalle de una película. Recibe el id vía `useLocation().state.peliculaId`. Muestra poster grande, miniaturas clickeables, descripción, precio, stock y controles de compra.
+
+### 8.2 Hooks
+
+| State | Para qué |
+| :--- | :--- |
+| `pelicula` (null) | Datos del backend |
+| `cargando` (true) | Loader |
+| `error` (null) | Mensaje de error |
+| `fotoActiva` (0) | Índice de la foto grande que se ve |
+| `cantidad` (1) | Para agregar al carrito |
+| `mensajeCarrito` (null) | Mini alert de agregado |
+
+- `useLocation()` para leer el `state`.
+- `useNavigate()` para "volver" y para ir al login si no hay token.
+- `useEffect([peliculaId])` → carga la película. Si no hay id, redirige a `/`.
+
+### 8.3 Endpoints
+
+| Método | URL |
+| :--- | :--- |
+| GET | `/api/peliculas/{id}` |
+| POST | `/api/carrito/items` body `{peliculaId, cantidad}` |
+
+### 8.4 Handlers
+
+- `handleAgregarAlCarrito()` → si no hay token, va a `/login`. Si no, POST. Maneja 403 explícito. Si todo bien, llama `onCarritoActualizado()`.
+- `disminuir()` / `aumentar()` → cambian `cantidad` respetando `pelicula.stock`.
+- Click en una miniatura → `setFotoActiva(indice)`.
+
+### 8.5 Renderizado condicional
+
+- `if (cargando) ...`, `if (error) ...`, `if (!pelicula) return null`.
+- Precio tachado solo si `tieneDescuento`.
+- Bloque de controles solo si usuario COMPRADOR y hay stock; si no hay usuario, muestra botón "Iniciá sesión para comprar" que lleva a `/login`.
+
+### 8.6 Preguntas posibles
+
+- **¿Por qué `location.state` y no `useParams`?** Porque `useParams` no lo vimos en clase. El id se pasa como estado del router al navegar desde la tarjeta.
+
+---
+
+## 9. Carrito (src/views/Carrito.jsx)
+
+### 9.1 Qué hace
+
+Muestra los ítems del carrito del comprador, permite cambiar cantidad, quitar un ítem, vaciar y confirmar la compra. Calcula el total en el cliente con un `for` (no se puede usar `reduce`).
+
+### 9.2 Hooks
+
+| State | Para qué |
+| :--- | :--- |
+| `carrito` (null) | `{ id, items: [...] }` |
+| `cargando` (true) | Loader |
+| `error` (null) | Mensaje de error |
+| `confirmando` (false) | Deshabilita el botón mientras se procesa la compra |
+
+- `useEffect([])` → llama `cargarCarrito()` una vez.
+- `useNavigate()` para ir a `/mis-ordenes` después de confirmar.
+
+### 9.3 Endpoints
 
 | Método | URL | Cuándo |
-|---|---|---|
-| GET | `/api/carrito` | Al montar y después de cada acción |
-| PUT | `/api/carrito/items/:itemId` | Cambiar cantidad |
-| DELETE | `/api/carrito/items/:itemId` | Quitar item |
-| DELETE | `/api/carrito` | Vaciar carrito |
-| POST | `/api/ordenes` | Confirmar compra |
+| :--- | :--- | :--- |
+| GET | `/api/carrito` | Al cargar / tras cada acción |
+| PUT | `/api/carrito/items/{itemId}` body `{cantidad}` | Cambiar cantidad |
+| DELETE | `/api/carrito/items/{itemId}` | Quitar un ítem |
+| DELETE | `/api/carrito` | Vaciar todo |
+| POST | `/api/ordenes` sin body | Confirmar compra |
 
-### Handlers
-- `handleCambiarCantidad(itemId, nuevaCantidad)` — Si `nuevaCantidad < 1` corta. PUT con nueva cantidad total. Después recarga.
-- `handleQuitarItem(itemId)` — DELETE del item + recarga.
-- `handleVaciarCarrito()` — DELETE del carrito completo + recarga.
-- `handleConfirmarCompra()` — POST a `/api/ordenes` sin body (compra lo que haya en el carrito). Si sale bien, `navigate('/mis-ordenes')`.
-- `handleAplicarCupon()` — Solo cosmético, no habla con el backend.
+### 9.4 Handlers
 
-### Renderizado condicional
-- `cargando` / `error`.
-- Si `items.length === 0` → "Tu carrito está vacío".
-- Si hay items → grilla con cards + ticket de resumen a la derecha (sticky).
-- Botón "Vaciar carrito" solo si hay items.
+- `handleCambiarCantidad(itemId, nuevaCantidad)` → PUT; si falla con 403, alerta; si no, recarga carrito + llama `onCarritoActualizado()`.
+- `handleQuitarItem(itemId)` → DELETE del ítem.
+- `handleVaciarCarrito()` → DELETE del carrito completo (el backend responde con cuerpo vacío, por eso no se llama `.json()`).
+- `handleConfirmarCompra()` → POST a `/api/ordenes`. En éxito, navega a `/mis-ordenes`.
 
-### Datos locales vs servidor
-- Servidor: `carrito` entero (items y total vienen calculados).
-- Locales: `cupon`, `cuponAplicado` (nunca se envían al backend).
-
-### Preguntas que te pueden hacer
-- **¿Por qué re-fetchear el carrito después de cada acción en vez de modificar el estado local?** Para mantener consistencia con el backend: el total viene recalculado del servidor.
-- **¿Qué hace el cupón?** Solo decorativo. No existe endpoint de cupones.
-- **¿Por qué el POST de ordenes no tiene body?** Porque el backend ya sabe qué carrito pertenece al usuario (lo saca del JWT).
-
----
-
-## 7. MisOrdenes (`src/views/MisOrdenes.jsx`)
-
-### Qué hace
-Lista las órdenes del COMPRADOR logueado. Para cada orden muestra fecha, estado, total y tabla de detalles. Si está CONFIRMADA, permite cancelarla con un modal de confirmación.
-
-### Props
-- `token`.
-
-### Hooks
-
-| Variable | Inicial | Qué guarda |
-|---|---|---|
-| `ordenes` | `[]` | Lista de órdenes |
-| `cargando` | `true` | Flag |
-| `error` | `null` | Mensaje |
-| `ordenACancelar` | `null` | Orden que abre el modal |
-
-Función `cargarOrdenes()` separada para reutilizar.
-
-### Fetch
-- GET `/api/ordenes` al montar.
-- PUT `/api/ordenes/:id/cancelar` al confirmar cancelación.
-
-### Handlers
-- `formatearFecha(str)` — Helper manual (sin librerías de fechas): `new Date` + `getDate`, `getMonth` + 1, `getFullYear`.
-- `handleCancelarOrden(id)` — PUT, maneja 403, al salir bien cierra el modal (`setOrdenACancelar(null)`) y recarga.
-
-### Renderizado condicional
-- `cargando` / `error`.
-- `ordenes.length === 0` → "Todavía no realizaste ninguna compra".
-- Cada orden: tag CONFIRMADA (verde) o CANCELADA (rojo).
-- Botón "Cancelar orden" solo si `esConfirmada`.
-- Modal al final solo si `ordenACancelar` es truthy.
-
-### Interacciones destacables
-- Modal de confirmación controlado por `ordenACancelar` (un objeto, no un boolean, para poder mostrar el ID y total en el modal).
-
-### Preguntas que te pueden hacer
-- **¿Por qué guardás el objeto orden entero en `ordenACancelar` y no solo el ID?** Para mostrar `#{ordenACancelar.id}` y `${ordenACancelar.total}` en el modal sin volver a buscar.
-- **¿Por qué formateás la fecha manualmente?** Porque no se permite `dayjs` ni `moment`.
-
----
-
-## 8. MisPeliculas (`src/views/MisPeliculas.jsx`)
-
-### Qué hace
-Panel del VENDEDOR. Lista sus propias películas, permite crear una nueva, editar datos, cambiar stock, cambiar descuento, agregar/quitar fotos y eliminar. No existe endpoint "mis películas": pide todas y filtra con `.filter`.
-
-### Props
-- `token`, `usuario`.
-
-### Hooks (muchos — es la vista más grande)
-
-Estados principales:
-- `peliculas` (`[]`), `categorias` (`[]`), `cargando` (`true`), `error` (`null`).
-- `panelAbierto` (`null`) — objeto `{ id, tipo }` que indica qué panel inline está desplegado en qué película.
-
-Estados del formulario de creación:
-- `nuevaTitulo`, `nuevaDescripcion`, `nuevoPrecio`, `nuevoStock`, `nuevaCategoriaId` (`''`), `creando` (`false`), `errorCrear` (`null`).
-
-Estados del panel editar:
-- `editTitulo`, `editDescripcion`, `editPrecio`, `editCategoriaId`.
-
-Estados de stock/descuento/fotos:
-- `nuevoStockValor`, `nuevoDescuento`, `nuevaFotoUrl`.
-
-### `useEffect` con `[]`
-Carga categorías y películas al montar:
+### 9.5 Cálculo del total (sin `reduce`)
 
 ```js
-useEffect(() => {
-  fetch(`${URL_BASE}/api/categorias`)...
-  cargarPeliculas()
-}, [])
+let totalCarrito = 0
+for (const it of items) {
+  const p = it.pelicula
+  if (p) {
+    const pf = p.descuentoPorcentaje > 0
+      ? parseInt(p.precio - p.precio * p.descuentoPorcentaje / 100)
+      : p.precio
+    totalCarrito = totalCarrito + pf * it.cantidad
+  }
+}
 ```
 
-### Filtrado "mis películas"
+### 9.6 Renderizado condicional
+
+- Loader / error / "carrito vacío" / lista + ticket.
+- Botón "Confirmar compra" muestra "Procesando..." mientras `confirmando` es true.
+
+### 9.7 Preguntas posibles
+
+- **¿Por qué el for en vez de `reduce`?** Porque `reduce` no lo vimos en clase.
+- **¿Por qué `parseInt`?** Para redondear sin usar `Math.round` ni `toFixed`.
+
+---
+
+## 10. Mis órdenes (src/views/MisOrdenes.jsx)
+
+### 10.1 Qué hace
+
+Lista las órdenes del comprador. Cada orden muestra fecha, estado (CONFIRMADA/CANCELADA), total y una tabla con sus detalles. Permite cancelar órdenes CONFIRMADAS con un modal de confirmación.
+
+### 10.2 Hooks
+
+| State | Para qué |
+| :--- | :--- |
+| `ordenes` (`[]`) | Lista de órdenes |
+| `cargando` (true) | Loader |
+| `error` (null) | Mensaje de error |
+| `ordenACancelar` (null) | Orden seleccionada para el modal |
+
+- `useEffect([])` → `cargarOrdenes()`.
+
+### 10.3 Endpoints
+
+| Método | URL |
+| :--- | :--- |
+| GET | `/api/ordenes` |
+| PUT | `/api/ordenes/{id}/cancelar` |
+
+### 10.4 Handlers
+
+- `cargarOrdenes()` → GET y setea estado.
+- `formatearFecha(fechaStr)` → parsea ISO y arma `dd/mm/aaaa` manualmente con `getDate/getMonth/getFullYear` (sin librerías).
+- `handleCancelarOrden(ordenId)` → PUT. Si éxito, cierra el modal (`setOrdenACancelar(null)`) y recarga la lista.
+
+### 10.5 Interacciones
+
+- Modal de cancelación: se renderiza solo cuando `ordenACancelar` no es null. Botones "No, mantener" (cierra) y "Sí, cancelar" (llama al handler).
+
+### 10.6 Renderizado condicional
+
+- Botón "Cancelar orden" solo visible si la orden está `CONFIRMADA`.
+- Si está `CANCELADA`, muestra cartel de "Orden anulada".
+
+### 10.7 Preguntas posibles
+
+- **¿Por qué el modal como estado y no `confirm()`?** Para una UX más cuidada y porque podemos cerrarlo sin cancelar.
+
+---
+
+## 11. Mis películas (src/views/MisPeliculas.jsx)
+
+### 11.1 Qué hace
+
+Panel del VENDEDOR. Lista sus películas (filtradas en el cliente), permite crear una nueva, editar datos, cambiar stock, cambiar descuento, administrar fotos y eliminar.
+
+### 11.2 Hooks (muchos `useState`)
+
+- Datos: `peliculas`, `categorias`, `cargando`, `error`.
+- Panel inline: `panelAbierto` (`{id, tipo}` o `null`). `tipo` ∈ `'editar' | 'stock' | 'descuento' | 'fotos'`.
+- Form "crear": `nuevaTitulo`, `nuevaDescripcion`, `nuevoPrecio`, `nuevoStock`, `nuevaCategoriaId`, `creando`, `errorCrear`.
+- Form "editar": `editTitulo`, `editDescripcion`, `editPrecio`, `editCategoriaId`.
+- Otros panels: `nuevoStockValor`, `nuevoDescuento`, `nuevaFotoUrl`.
+
+`useEffect([])` → carga categorías y películas (vía `cargarPeliculas()`).
+
+Filtrado "mis películas":
 
 ```js
 const misPeliculas = data.content.filter(
@@ -455,27 +513,27 @@ const misPeliculas = data.content.filter(
 )
 ```
 
-### Fetch / endpoints
+### 11.3 Endpoints
 
 | Método | URL | Para qué |
-|---|---|---|
-| GET | `/api/peliculas` | Listar (y filtrar) |
-| GET | `/api/categorias` | Combo de categorías |
+| :--- | :--- | :--- |
+| GET | `/api/peliculas` | Todas (se filtra en cliente) |
+| GET | `/api/categorias` | Para el `<select>` |
 | POST | `/api/peliculas` | Crear |
-| PUT | `/api/peliculas/:id` | Editar |
-| PUT | `/api/peliculas/:id/stock` | Cambiar stock |
-| PUT | `/api/peliculas/:id/descuento` | Cambiar descuento |
-| POST | `/api/peliculas/:id/fotos` | Agregar foto (body `{ urls: [url] }`) |
-| DELETE | `/api/peliculas/:id/fotos/:fotoId` | Quitar foto |
-| DELETE | `/api/peliculas/:id` | Eliminar película |
+| PUT | `/api/peliculas/{id}` | Editar título/desc/precio/categoría |
+| PUT | `/api/peliculas/{id}/stock` | Cambiar stock |
+| PUT | `/api/peliculas/{id}/descuento` | Cambiar descuento |
+| POST | `/api/peliculas/{id}/fotos` body `{urls:[url]}` | Agregar foto |
+| DELETE | `/api/peliculas/{id}/fotos/{fotoId}` | Quitar foto |
+| DELETE | `/api/peliculas/{id}` | Eliminar película |
 
-### Handlers
-- `abrirPanel(peliculaId, tipo, pelicula)` — Toggle del panel inline. Si estaba abierto el mismo, lo cierra; si no, lo abre y precarga los campos según el tipo (`'editar'`, `'stock'`, `'descuento'`, `'fotos'`).
-- `handleCrearPelicula(e)` — Valida los 5 campos, POST, al salir bien limpia los inputs y recarga.
-- `handleEditar(id)`, `handleCambiarStock(id)`, `handleCambiarDescuento(id)`, `handleAgregarFoto(id)`, `handleEliminarFoto(id, fotoId)`, `handleEliminarPelicula(id)` — Todos siguen el mismo patrón: fetch, chequeo de 403, al salir bien recarga.
+### 11.4 Handlers
 
-### Totales sin `reduce`
-Como `reduce` no está permitido, se usa un `for` clásico:
+Cada handler sigue el mismo patrón: validar inputs con `.trim()` o `=== ''`, hacer fetch con JWT, manejar 403 con `alert`, en éxito cerrar panel + `cargarPeliculas()`.
+
+- `abrirPanel(peliculaId, tipo, pelicula)` → setea `panelAbierto` y pre-rellena los inputs del panel con los datos actuales. Si se vuelve a clickear el mismo panel, lo cierra (toggle).
+
+### 11.5 Total de stock (sin `reduce`)
 
 ```js
 let totalStock = 0
@@ -484,127 +542,120 @@ for (let i = 0; i < peliculas.length; i++) {
 }
 ```
 
-### Renderizado condicional
-- `cargando` / `error`.
-- `errorCrear` muestra banner en el formulario de alta.
-- Lista vacía → "Todavía no publicaste ninguna película".
-- Cada película tiene 4 paneles inline (editar/stock/descuento/fotos) que se muestran según `panelAbierto`.
-- Dentro del panel de fotos: si hay fotos, grilla; si no, mensaje.
+### 11.6 Renderizado condicional
 
-### Preguntas que te pueden hacer
-- **¿Por qué no hay endpoint "mis películas"?** El backend no lo expone. Se pide todo y se filtra con `.filter` por `vendedor.id === usuario.id`.
-- **¿Por qué usás un `for` para el totalStock?** Porque `reduce` no está en la lista de métodos permitidos.
-- **¿Cómo funciona el toggle de los paneles inline?** `panelAbierto` guarda `{ id, tipo }`. Al clickear el mismo botón dos veces se cierra. Las comparaciones usan `esTipo(t)` que chequea id y tipo.
+- Loader/error.
+- Formulario de "crear" con `errorCrear` en banner.
+- Si no hay películas → mensaje; si no, `.map()` que renderiza cada tarjeta + los paneles inline (`esTipo('editar') && ...`).
 
----
+### 11.7 Preguntas posibles
 
-## 9. MiPerfil (`src/views/MiPerfil.jsx`)
-
-### Qué hace
-Formulario para que el usuario logueado edite su `username`, `firstName` y `lastName`. El email y el rol se muestran pero no se editan.
-
-### Props
-- `token`, `usuario`, `onActualizarUsuario(nuevoUsuario)` — callback para actualizar el estado global.
-
-### Hooks
-
-| Variable | Inicial | Qué guarda |
-|---|---|---|
-| `username` | `usuario.username` | Input |
-| `firstName` | `usuario.firstName` | Input |
-| `lastName` | `usuario.lastName` | Input |
-| `guardando` | `false` | Flag |
-| `error` | `null` | Mensaje |
-| `exito` | `false` | Banner de éxito |
-
-Sin `useEffect`: los inputs ya se inicializan con los datos del `usuario` recibido por prop.
-
-### Fetch
-- PUT `/api/usuarios/me` con `{ username, firstName, lastName }`.
-- Al salir bien, llama a `onActualizarUsuario(data)` para que `App.jsx` refresque el `usuario` global.
-
-### Handlers
-- `handleSubmit(e)` — Tres validaciones con `trim()`, PUT, actualiza estado global y muestra banner `exito`.
-
-### Renderizado condicional
-- `if (!usuario) return <p>No estás logueado.</p>`
-- Banners de éxito y error con botón de cerrar.
-
-### Preguntas que te pueden hacer
-- **¿Por qué `onActualizarUsuario`?** Porque si cambia el username, el navbar tiene que mostrar el nuevo. Hay que subir el cambio al estado global de `App.jsx`.
-- **¿Por qué los estados se inicializan con `usuario.username` directo y no con `useEffect`?** Porque la vista se monta cuando ya hay un usuario; alcanza con pasar el valor inicial al `useState`.
+- **¿Por qué filtrás en el cliente?** Porque el backend no tiene un endpoint "mis películas". Se usa el GET general y `filter` por `pelicula.vendedor.id === usuario.id`.
+- **¿Por qué `panelAbierto` como objeto?** Para saber a la vez a qué película y qué tipo de panel está abierto; con un solo state se garantiza que solo haya un panel abierto por vez.
 
 ---
 
-## 10. Categorias (`src/views/Categorias.jsx`)
+## 12. Mi perfil (src/views/MiPerfil.jsx)
 
-### Qué hace
-Panel ADMIN para listar, crear, editar y eliminar categorías. Vista con form a la izquierda y tabla editable a la derecha.
+### 12.1 Qué hace
 
-### Props
-- `token`.
+Form para editar `username`, `firstName` y `lastName`. El email y el rol se muestran pero no se pueden cambiar.
 
-### Hooks
+### 12.2 Hooks
 
-| Variable | Inicial | Qué guarda |
-|---|---|---|
-| `categorias` | `[]` | Lista |
-| `cargando` | `true` | Flag |
-| `error` | `null` | Mensaje |
-| `nuevaDescripcion` | `''` | Input de alta |
-| `creando` | `false` | Flag alta |
-| `errorCrear` | `null` | Error en alta |
-| `editandoId` | `null` | ID de la categoría que se está editando inline |
-| `editDescripcion` | `''` | Input de edición |
+`useState` para `username`, `firstName`, `lastName` (iniciados con los valores de `usuario`), `guardando`, `error`, `exito`.
 
-### Fetch
+### 12.3 Props
 
-| Método | URL | Para qué |
-|---|---|---|
-| GET | `/api/categorias` | Listar |
-| POST | `/api/categorias` | Crear |
-| PUT | `/api/categorias/:id` | Editar |
-| DELETE | `/api/categorias/:id` | Baja lógica |
+`token`, `usuario`, `onActualizarUsuario` (es el propio `setUsuario` de App).
 
-### Handlers
-- `handleCrear(e)` — Valida descripción, POST, limpia input, recarga.
-- `abrirEditar(categoria)` — Setea `editandoId` y `editDescripcion`.
-- `handleGuardarEdicion(id)` — PUT, cierra el modo edición (`setEditandoId(null)`), recarga.
-- `handleEliminar(id)` — DELETE + recarga.
+### 12.4 Endpoint
 
-### Renderizado condicional
-- Dentro de cada `<tr>`, si `editandoId === categoria.id` → muestra input + botones Guardar/Cancelar. Si no → muestra texto + botones Editar/Eliminar.
+| Método | URL | Body |
+| :--- | :--- | :--- |
+| PUT | `/api/usuarios/me` | `{username, firstName, lastName}` |
 
-### Preguntas que te pueden hacer
-- **¿Qué pasa cuando eliminás una categoría?** El backend hace baja lógica: la categoría deja de aparecer en los listados pero sigue existiendo (para no romper películas que la usaban).
-- **¿Por qué `editandoId` en vez de un boolean?** Para saber qué fila está en modo edición (solo una a la vez).
+### 12.5 Handler
+
+- `handleSubmit(e)` → valida con `trim()`, PUT, en éxito llama `onActualizarUsuario(data)` para que el navbar también muestre el nuevo username.
+
+### 12.6 Renderizado condicional
+
+- Si `!usuario` → "No estás logueado".
+- Banners de éxito/error con botones de cerrar.
+
+### 12.7 Preguntas posibles
+
+- **¿Por qué el padre te pasa `setUsuario` como prop?** Para que después de guardar, el estado global quede sincronizado sin repetir el fetch.
 
 ---
 
-## 11. Usuarios (`src/views/Usuarios.jsx`)
+## 13. Categorías (src/views/Categorias.jsx)
 
-### Qué hace
-Panel ADMIN para listar todos los usuarios, cambiar su rol con un `<select>` o eliminarlos.
+### 13.1 Qué hace
 
-### Props
-- `token`.
+Vista de ADMIN para dar de alta, editar y eliminar categorías.
 
-### Hooks
-- `usuarios` (`[]`), `cargando` (`true`), `error` (`null`).
+### 13.2 Hooks
 
-### Fetch
+- `categorias`, `cargando`, `error`.
+- Form crear: `nuevaDescripcion`, `creando`, `errorCrear`.
+- Edición inline: `editandoId` (id de la fila en edición) + `editDescripcion`.
 
-| Método | URL | Para qué |
-|---|---|---|
-| GET | `/api/usuarios` | Listar |
-| PUT | `/api/usuarios/:id/rol` | Cambiar rol |
-| DELETE | `/api/usuarios/:id` | Eliminar |
+`useEffect([])` → `cargarCategorias()`.
 
-### Handlers
-- `handleCambiarRol(id, nuevoRol)` — PUT con `{ role: nuevoRol }`, recarga.
-- `handleEliminar(id)` — DELETE + recarga.
+### 13.3 Endpoints
 
-### Métricas calculadas con `.filter`
+| Método | URL | Cuándo |
+| :--- | :--- | :--- |
+| GET | `/api/categorias` | Al montar |
+| POST | `/api/categorias` body `{descripcion}` | Crear |
+| PUT | `/api/categorias/{id}` body `{descripcion}` | Guardar edición |
+| DELETE | `/api/categorias/{id}` | Eliminar |
+
+### 13.4 Handlers
+
+- `handleCrear(e)` → POST. 409 (ya existe) se muestra como `errorCrear`.
+- `abrirEditar(categoria)` → prepara `editandoId` y `editDescripcion`.
+- `handleGuardarEdicion(id)` → PUT; en éxito, `setEditandoId(null)` + recarga.
+- `handleEliminar(id)` → DELETE (baja lógica en el backend).
+
+### 13.5 Renderizado condicional
+
+Cada fila: si `editandoId === categoria.id` muestra un input + botones "Guardar/Cancelar"; si no, muestra el texto + botones "Editar/Eliminar".
+
+### 13.6 Preguntas posibles
+
+- **¿Qué pasa si una categoría ya existe?** El backend tira 409 con `message`, que se muestra en el banner `errorCrear`.
+
+---
+
+## 14. Usuarios (src/views/Usuarios.jsx)
+
+### 14.1 Qué hace
+
+Vista de ADMIN. Lista todos los usuarios con sus roles y permite cambiarles el rol con un `<select>` o eliminarlos.
+
+### 14.2 Hooks
+
+`usuarios`, `cargando`, `error`. `useEffect([])` → `cargarUsuarios()`.
+
+### 14.3 Endpoints
+
+| Método | URL | Body |
+| :--- | :--- | :--- |
+| GET | `/api/usuarios` | — |
+| PUT | `/api/usuarios/{id}/rol` | `{role}` |
+| DELETE | `/api/usuarios/{id}` | — |
+
+### 14.4 Handlers
+
+- `handleCambiarRol(id, nuevoRol)` → PUT. Dispara desde `onChange` del `<select>` de cada fila.
+- `handleEliminar(id)` → DELETE.
+
+### 14.5 Datos derivados
+
+Calcula contadores con `.filter(...).length`:
 
 ```js
 const totalAdmins = usuarios.filter((u) => u.role === 'ADMIN').length
@@ -612,55 +663,54 @@ const totalVendedores = usuarios.filter((u) => u.role === 'VENDEDOR').length
 const totalCompradores = usuarios.filter((u) => u.role === 'COMPRADOR').length
 ```
 
-### Renderizado condicional
-- Loader / error / tabla.
-- Dentro de cada fila, badge "VIP ADMIN" o "PRO" según el rol (con `&&`).
+### 14.6 Preguntas posibles
 
-### Preguntas que te pueden hacer
-- **¿Por qué el `<select>` dispara el PUT directamente en el `onChange`?** Porque es una acción simple e inmediata, no hace falta un botón de confirmar.
-- **¿Cómo contás los admins sin `reduce`?** Con `.filter(...).length`.
+- **¿Por qué `filter` y no `reduce`?** `filter` sí lo vimos; `reduce` no.
 
 ---
 
-## 12. OrdenesAdmin (`src/views/OrdenesAdmin.jsx`)
+## 15. Órdenes admin (src/views/OrdenesAdmin.jsx)
 
-### Qué hace
-Panel ADMIN de solo lectura: lista todas las órdenes del sistema con comprador, estado, total y detalle de ítems. Muestra métricas de confirmadas vs canceladas arriba.
+### 15.1 Qué hace
 
-### Props
-- `token`.
+Vista de ADMIN. Lista TODAS las órdenes del sistema (de todos los usuarios), con sus detalles. Solo lectura (no cancela ni modifica).
 
-### Hooks
-- `ordenes` (`[]`), `cargando` (`true`), `error` (`null`).
+### 15.2 Hooks
 
-### Fetch
-- GET `/api/admin/ordenes` al montar.
+`ordenes`, `cargando`, `error`. `useEffect([])` → fetch inicial.
 
-### Handlers / helpers
-- `formatearFecha(str)` — Mismo helper manual que en MisOrdenes.
-- `totalConfirmadas = ordenes.filter((o) => o.estado === 'CONFIRMADA').length`
-- `totalCanceladas = ordenes.filter((o) => o.estado === 'CANCELADA').length`
+### 15.3 Endpoint
 
-### Renderizado condicional
-- Loader / error / lista vacía.
-- Por cada orden: badge CONFIRMADA (verde) o CANCELADA (rojo).
-- Si está cancelada: tabla con texto tachado + banner "Orden anulada".
+| Método | URL |
+| :--- | :--- |
+| GET | `/api/admin/ordenes` con `Authorization: Bearer <token>` |
 
-### Datos locales vs servidor
-- Todo viene del servidor. No hay edición ni acciones destructivas (el admin solo audita).
+### 15.4 Helpers
 
-### Preguntas que te pueden hacer
-- **¿Qué diferencia hay entre esta vista y MisOrdenes?** Esta usa `/api/admin/ordenes` (ADMIN only) y es de solo lectura. MisOrdenes usa `/api/ordenes` (sus propias) y permite cancelar.
-- **¿Cómo calculás los totales?** Con `.filter(...).length`, igual que en Usuarios.
+- `formatearFecha(fechaStr)` igual que en `MisOrdenes`.
+- `totalConfirmadas` y `totalCanceladas` con `.filter(...).length`.
+
+### 15.5 Renderizado condicional
+
+- Loader / error / "no hay órdenes" / lista con `.map()`.
+- Cada orden muestra badge verde (CONFIRMADA) o rojo (CANCELADA) y el total tachado si está cancelada.
+- Si `orden.estado === 'CANCELADA'` muestra el cartel "Orden anulada" debajo de la tabla.
+
+### 15.6 Preguntas posibles
+
+- **¿Por qué no se cancelan desde acá?** Porque solo el comprador dueño puede cancelar su orden (regla del backend). El admin solo audita.
 
 ---
 
-## Resumen rápido para la defensa oral
+## Resumen oral (10 bullets para presentar)
 
-- **Un solo estado global** en `App.jsx` con `token` y `usuario`. Nada de Redux, nada de Context.
-- **Navegación** con `react-router-dom`: `BrowserRouter` en `main.jsx`, `Routes/Route` en `App.jsx`, `Link` en el navbar, `useNavigate`/`useLocation` donde hace falta.
-- **Comunicación con el backend** siempre con `fetch` encadenado (`.then().catch()`), chequeo de `response.ok` y manejo especial del 403.
-- **Formularios controlados** con `useState` por campo, validación con `trim()`, `preventDefault` en submit.
-- **Renderizado condicional** con `if` antes del return (cargando, error), `&&` (badges, modales) y ternario (precio con/sin descuento, confirmada/cancelada).
-- **Listas** con `.map` y `key={item.id}`. Filtrados con `.filter`. Nada de `reduce` ni `sort`.
-- **Separación por rol** se hace en dos lugares: en el navbar (qué enlaces se ven) y en cada vista (qué botones/acciones aparecen según `usuario.role`).
+1. **Estructura:** proyecto Vite + React (JSX, JavaScript puro), `react-router-dom` como única dependencia extra. Carpetas `views/` y `components/`.
+2. **Estado global en `App.jsx`:** solo cuatro `useState` (`token`, `usuario`, `cantidadCarrito`, `sesionLista`), que se pasan por props. Sin Context, Redux ni Zustand.
+3. **Sesión persistida:** el token vive en `localStorage`. Al cargar la app, un `useEffect` lee el token y hace `GET /api/usuarios/me` para restaurar el usuario; mientras tanto, `sesionLista = false` evita renderizar las rutas.
+4. **Navegación por rol:** `Navigation` cambia los links con `&&` según `usuario.role`. El carrito muestra un globo rojo cuando `cantidadCarrito > 0`, que `App.jsx` mantiene actualizado con un callback `onCarritoActualizado`.
+5. **Patrón de fetch:** siempre `.then((response) => response.json()).then(...).catch(console.error)`. Los endpoints protegidos mandan `Authorization: Bearer <token>`. Antes de `response.json()` chequeo `response.ok` por el 403 con cuerpo vacío.
+6. **Listados paginados:** uso `data.content` para películas y categorías porque Spring los envuelve en un Page.
+7. **Formularios:** `<form onSubmit>`, estado por input, validación con `trim() === ''`, mensajes de error vienen de `data.message` del backend.
+8. **Cálculos sin `reduce`/`Math`:** el total del carrito y la suma de stock se hacen con `for`. Los precios con descuento se redondean con `parseInt(precio - precio * descuento / 100)`.
+9. **Interacciones ricas:** toasts con `setTimeout`, modal de cancelar orden (`ordenACancelar`), panel inline en `MisPeliculas` (`panelAbierto = {id, tipo}`), edición inline en Categorías.
+10. **Reglas de clase:** sin `async/await`, sin `?.`, sin `??`, sin hooks custom, sin `useRef`/`useContext`/`useMemo`/`useParams`. Para pasar el id al detalle uso `location.state`. Estilos con Tailwind (sumado al permiso de la profe para librerías visuales); la lógica sigue siendo "estudiante que recién aprendió React".
