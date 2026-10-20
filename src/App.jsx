@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Navigation from './components/Navigation.jsx'
+import Footer from './components/Footer.jsx'
 import Catalogo from './views/Catalogo.jsx'
 import Login from './views/Login.jsx'
 import Registro from './views/Registro.jsx'
@@ -28,9 +29,9 @@ function App() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0F0E17', color: '#FFF8E7' }}>
+    <div className="min-h-screen flex flex-col bg-background text-on-surface">
       <Navigation usuario={usuario} onLogout={handleLogout} />
-      <main style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem 1.5rem' }}>
+      <main className="w-full pt-[72px] flex-1">
         <Routes>
           <Route path="/" element={<Catalogo token={token} usuario={usuario} />} />
           <Route path="/login" element={<Login onLogin={handleLogin} />} />
@@ -45,6 +46,7 @@ function App() {
           <Route path="/pelicula" element={<DetallePelicula token={token} usuario={usuario} />} />
         </Routes>
       </main>
+      <Footer />
     </div>
   )
 }
