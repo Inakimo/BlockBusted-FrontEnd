@@ -5,6 +5,7 @@ import { fetchCantidadCarrito } from '../store/carritoSlice'
 import PageLoading from '../components/PageLoading.jsx'
 import PageError from '../components/PageError.jsx'
 import GaleriaFotos from '../components/GaleriaFotos.jsx'
+import SeccionResenas from '../components/SeccionResenas.jsx'
 
 const URL_BASE = 'http://localhost:4002'
 
@@ -139,7 +140,7 @@ function DetallePelicula() {
         </div>
 
         {/* Two-column compact */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-space-md items-start">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-space-md items-start" id="detalle-top">
 
           {/* Left: poster */}
           <div className="md:col-span-5 flex flex-col gap-space-xs">
@@ -286,6 +287,8 @@ function DetallePelicula() {
             )}
           </div>
         </div>
+        {/* Reseñas */}
+        <SeccionResenas peliculaId={peliculaId} usuario={usuario} token={token} />
       </div>
     </div>
   )

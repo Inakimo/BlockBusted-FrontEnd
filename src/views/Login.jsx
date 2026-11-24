@@ -70,10 +70,6 @@ function Login() {
       })
   }
 
-  function cargarRolRapido(emailRol, passwordRol) {
-    setEmail(emailRol)
-    setPassword(passwordRol)
-  }
 
   return (
     <div className="w-full flex items-center justify-center p-margin-sm">
@@ -261,43 +257,6 @@ function Login() {
               <span>{cargando ? 'REBOBINANDO...' : 'INGRESAR A LA TIENDA'}</span>
             </button>
           </form>
-
-          {/* Divider */}
-          <div className="relative flex py-5 items-center">
-            <div className="flex-grow" style={{ borderTop: '3px solid #000000' }}></div>
-            <span className="flex-shrink mx-3 font-label-sm text-label-sm uppercase tracking-widest text-muted-gray bg-card-surface px-2" style={{ fontWeight: 900 }}>
-              ROLES DE ACCESO RÁPIDO
-            </span>
-            <div className="flex-grow" style={{ borderTop: '3px solid #000000' }}></div>
-          </div>
-
-          {/* Quick role chips */}
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            <button
-              type="button"
-              onClick={() => cargarRolRapido('comprador@blockbusted.com', 'comprador123')}
-              className="bg-cream text-ink-black font-label-sm text-label-sm py-2 px-1 text-center shadow-[2px_2px_0_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0_#000] transition-all cursor-pointer"
-              style={{ border: '2px solid #000000', borderRadius: '4px' }}
-            >
-              Comprador
-            </button>
-            <button
-              type="button"
-              onClick={() => cargarRolRapido('vendedor@blockbusted.com', 'vendedor123')}
-              className="bg-cream text-ink-black font-label-sm text-label-sm py-2 px-1 text-center shadow-[2px_2px_0_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0_#000] transition-all cursor-pointer"
-              style={{ border: '2px solid #000000', borderRadius: '4px' }}
-            >
-              Vendedor
-            </button>
-            <button
-              type="button"
-              onClick={() => cargarRolRapido('admin@blockbusted.com', 'admin123')}
-              className="bg-cream text-ink-black font-label-sm text-label-sm py-2 px-1 text-center shadow-[2px_2px_0_#000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0_#000] transition-all cursor-pointer"
-              style={{ border: '2px solid #000000', borderRadius: '4px' }}
-            >
-              Admin
-            </button>
-          </div>
 
           {/* Footer registration link */}
           <div className="pt-2 text-center" style={{ borderTop: '1px solid rgba(107,114,128,0.3)' }}>

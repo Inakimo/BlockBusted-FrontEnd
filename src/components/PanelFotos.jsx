@@ -4,28 +4,34 @@ import { toast } from '../utils/toast.js'
 const URL_BASE = 'http://localhost:4002'
 
 function PanelFotos({ pelicula, token, onActualizado, onCerrar }) {
-  const [nuevaUrl, setNuevaUrl] = useState('')
+  const [archivo, setArchivo] = useState(null)
+  const [subiendo, setSubiendo] = useState(false)
 
   function handleAgregar() {
-    if (nuevaUrl.trim() === '') { toast('La URL de la foto es obligatoria'); return }
+    if (!archivo) { toast('Seleccioná una imagen'); return }
 
-    fetch(`${URL_BASE}/api/peliculas/${pelicula.id}/fotos`, {
+    setSubiendo(true)
+    const formData = new FormData()
+    formData.append('file', archivo)
+
+    fetch(`${URL_BASE}/api/peliculas/${pelicula.id}/fotos/upload`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ urls: [nuevaUrl] }),
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: formData,
     })
       .then((res) => {
+        setSubiendo(false)
         if (!res.ok) {
           if (res.status === 403) { toast('No tenés permiso para agregar fotos.'); return }
           return res.json().then((d) => toast(d.message))
         }
         return res.json().then((data) => {
-          setNuevaUrl('')
+          setArchivo(null)
           const nuevas = Array.isArray(data) ? data : [data]
           onActualizado([...(pelicula.fotos || []), ...nuevas])
         })
       })
-      .catch(() => toast('Error de conexión.'))
+      .catch(() => { setSubiendo(false); toast('Error de conexión.') })
   }
 
   function handleEliminar(fotoId) {
@@ -95,26 +101,30 @@ function PanelFotos({ pelicula, token, onActualizado, onCerrar }) {
 
       <div className="pt-space-xs" style={{ borderTop: '1px solid rgba(107,114,128,0.2)' }}>
         <label className="block font-label-sm text-label-sm uppercase tracking-wider text-ink-black mb-1">
-          Cargar Nueva URL de Imagen:
+          Subir Nueva Imagen:
         </label>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-space-xs">
           <input
-            type="url"
-            value={nuevaUrl}
-            onChange={(e) => setNuevaUrl(e.target.value)}
-            className="flex-1 bg-card-surface text-ink-black font-body-sm text-body-sm px-space-sm py-[7px] focus:outline-none focus:shadow-[2px_2px_0px_#0061a9]"
+            type="file"
+            accept="image/*"
+            onChange={(e) => setArchivo(e.target.files[0] || null)}
+            className="flex-1 bg-card-surface text-ink-black font-body-sm text-body-sm px-space-sm py-[6px] focus:outline-none cursor-pointer file:mr-2 file:py-1 file:px-2 file:border file:border-black file:bg-cream file:text-ink-black file:font-bold file:text-xs file:uppercase file:cursor-pointer"
             style={{ border: '2px solid #000000', borderRadius: '4px' }}
-            placeholder="https://images.blockbusted.club/posters/..."
           />
           <button
             type="button"
             onClick={handleAgregar}
-            className="bg-primary-container text-ink-black font-label-md text-label-md px-space-md py-[7px] shadow-[2px_2px_0px_#000000] uppercase font-bold flex items-center justify-center gap-1 cursor-pointer"
+            disabled={subiendo || !archivo}
+            className="bg-primary-container text-ink-black font-label-md text-label-md px-space-md py-[7px] shadow-[2px_2px_0px_#000000] uppercase font-bold flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
             style={{ border: '2px solid #000000' }}
           >
-            <span className="material-symbols-outlined text-[18px]">add_photo_alternate</span> Agregar Foto
+            <span className="material-symbols-outlined text-[18px]">upload</span>
+            {subiendo ? 'Subiendo...' : 'Subir Foto'}
           </button>
         </div>
+        {archivo && (
+          <p className="mt-1 font-body-sm text-body-sm text-muted-gray">{archivo.name}</p>
+        )}
       </div>
     </div>
   )

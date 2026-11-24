@@ -10,7 +10,31 @@
       "Bash(npm run *)",
       "mcp__claude_ai_Claude_Docs__batch",
       "mcp__claude_ai_Claude_Docs__guide",
-      "mcp__claude_ai_Claude_Docs__update"
+      "mcp__claude_ai_Claude_Docs__update",
+      "Bash(npx vite *)",
+      "Bash(curl -s http://localhost:5173)",
+      "Bash(curl -s http://localhost:4002/api/categorias)",
+      "Bash(curl -s -X POST http://localhost:4002/api/auth/login -H \"Content-Type: application/json\" -d \"{\\\\\"username\\\\\":\\\\\"admin\\\\\",\\\\\"password\\\\\":\\\\\"admin\\\\\"}\")",
+      "Bash(curl -s -X POST http://localhost:4002/api/auth/login -H \"Content-Type: application/json\" -d \"{\\\\\"username\\\\\":\\\\\"admin\\\\\",\\\\\"password\\\\\":\\\\\"admin123\\\\\"}\")",
+      "Bash(curl -v -X POST http://localhost:4002/api/auth/login -H \"Content-Type: application/json\" -d \"{\\\\\"username\\\\\":\\\\\"admin\\\\\",\\\\\"password\\\\\":\\\\\"admin\\\\\"}\")",
+      "Bash(curl -s -X POST http://localhost:4002/api/peliculas/1/fotos -F \"file=@C:/Windows/System32/drivers/etc/hosts\")",
+      "Bash(curl -s http://localhost:4002/api/peliculas/1/resenas)",
+      "Bash(Get-Process java *)",
+      "PowerShell(Get-Process *)",
+      "PowerShell(Start-Process java -ArgumentList \"-jar\", \"C:\\\\Users\\\\iñaki\\\\Documents\\\\BlockBusted\\\\demo\\\\target\\\\demo-0.0.1-SNAPSHOT.jar\" -WindowStyle Hidden)",
+      "Bash(curl -s http://localhost:4002/api/peliculas)",
+      "Bash(curl -sv http://localhost:4002/api/peliculas)",
+      "Bash(curl -s -X POST http://localhost:4002/api/v1/auth/authenticate -H \"Content-Type: application/json\" -d '{\"email\":\"comprador@blockbusted.com\",\"password\":\"comprador123\"}')",
+      "Bash(bash *)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'Peliculas: {len\\(d[\\\\\"content\\\\\"]\\)}'\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'Resenas pelicula 1: {len\\(d\\)}'\\); [print\\(f'  {r[\\\\\"usuarioNombre\\\\\"]} \\({r[\\\\\"puntuacion\\\\\"]}★\\): {r[\\\\\"comentario\\\\\"][:60]}...'\\) for r in d]\")",
+      "Bash(curl -s http://localhost:4002/api/peliculas/1)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('OK -', d['titulo']\\)\")",
+      "PowerShell(Get-PSDrive C | Select-Object Used,Free; Write-Host \"---\"; \\(Get-ChildItem \"C:\\\\Users\\\\iñaki\\\\Documents\\\\BlockBusted\\\\demo\\\\target\" -ErrorAction SilentlyContinue | Measure-Object -Property Length -Sum\\).Sum / 1MB)",
+      "PowerShell($drive = Get-PSDrive C; Write-Host \"Free: $\\([math]::Round\\($drive.Free/1GB, 2\\)\\) GB\")",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\iñaki\\\\Desktop\" -File | Sort-Object Length -Descending | Select-Object Name, @{N=\"MB\";E={[math]::Round\\($_.Length/1MB,1\\)}} | Select-Object -First 10)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\iñaki\\\\Desktop\" -File | Where-Object {$_.Length -gt 10MB} | ForEach-Object { \"$\\([math]::Round\\($_.Length/1MB,0\\)\\) MB - $\\($_.Name\\)\" })",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(r['usuarioNombre']\\) for r in d]\")"
     ]
   }
 }

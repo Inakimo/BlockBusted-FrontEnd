@@ -13,37 +13,32 @@ function Catalogo() {
   const [peliculas, setPeliculas] = useState([])
   const [categorias, setCategorias] = useState([])
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('')
+  const [busqueda, setBusqueda] = useState('')
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
   const [mensajeCarrito, setMensajeCarrito] = useState(null)
 
   useEffect(() => {
-    fetch(`${URL_BASE}/api/categorias`)
-      .then((response) => response.json())
-      .then((data) => { setCategorias(data.content) })
-      .catch((error) => { console.error('Error al cargar categorías', error) })
-  }, [])
-
-  useEffect(() => {
-    setCargando(true)
-    setError(null)
-
-    const urlPeliculas = categoriaSeleccionada
-      ? `${URL_BASE}/api/peliculas?categoriaId=${categoriaSeleccionada}`
-      : `${URL_BASE}/api/peliculas`
-
-    fetch(urlPeliculas)
-      .then((response) => response.json())
-      .then((data) => {
-        setPeliculas(data.content)
+    Promise.all([
+      fetch(`${URL_BASE}/api/categorias`).then((r) => r.json()),
+      fetch(`${URL_BASE}/api/peliculas?size=1000`).then((r) => r.json()),
+    ])
+      .then(([catData, pelData]) => {
+        setCategorias(catData.content)
+        setPeliculas(pelData.content)
         setCargando(false)
       })
-      .catch((error) => {
-        console.error('Error al cargar películas', error)
+      .catch(() => {
         setError('No se pudieron cargar las películas.')
         setCargando(false)
       })
-  }, [categoriaSeleccionada])
+  }, [])
+
+  const peliculasFiltradas = peliculas.filter((p) => {
+    const coincideCategoria = !categoriaSeleccionada || String(p.categoria?.id) === String(categoriaSeleccionada)
+    const coincideNombre = !busqueda.trim() || p.titulo.toLowerCase().includes(busqueda.trim().toLowerCase())
+    return coincideCategoria && coincideNombre
+  })
 
   function handleAgregarAlCarrito(peliculaId, cantidad) {
     if (!token) return
@@ -114,29 +109,62 @@ function Catalogo() {
             </p>
           </div>
 
-          {/* Category filter */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-space-xs self-start md:self-end">
-            <label htmlFor="filtroCategoria" className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
-              CATEGORÍA
-            </label>
-            <div className="relative">
-              <select
-                id="filtroCategoria"
-                value={categoriaSeleccionada}
-                onChange={(e) => setCategoriaSeleccionada(e.target.value)}
-                className="appearance-none bg-card-surface text-ink-black font-label-lg text-label-lg py-space-xs pl-space-md pr-10 shadow-[4px_4px_0px_#000000] focus:outline-none cursor-pointer transition-transform active:translate-x-0.5 active:translate-y-0.5"
-                style={{ border: '3px solid #000000', borderRadius: '12px' }}
-              >
-                <option value="">Todas las categorías</option>
-                {categorias.map((categoria) => (
-                  <option key={categoria.id} value={categoria.id}>
-                    {categoria.descripcion}
-                  </option>
-                ))}
-              </select>
-              <span className="material-symbols-outlined pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-black font-bold">
-                arrow_drop_down
-              </span>
+          {/* Filters: search + category */}
+          <div className="flex flex-col sm:flex-row sm:items-end gap-space-sm self-start md:self-end">
+            {/* Search by name */}
+            <div className="flex flex-col gap-1">
+              <label htmlFor="busquedaNombre" className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
+                BUSCAR
+              </label>
+              <div className="relative">
+                <span className="material-symbols-outlined pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-ink-black" style={{ fontSize: '20px' }}>
+                  search
+                </span>
+                <input
+                  id="busquedaNombre"
+                  type="text"
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  placeholder="Nombre de película..."
+                  className="bg-card-surface text-ink-black font-label-lg text-label-lg py-space-xs pl-9 pr-space-md shadow-[4px_4px_0px_#000000] focus:outline-none"
+                  style={{ border: '3px solid #000000', borderRadius: '12px', minWidth: '220px' }}
+                />
+                {busqueda && (
+                  <button
+                    type="button"
+                    onClick={() => setBusqueda('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-black cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>close</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Category filter */}
+            <div className="flex flex-col gap-1">
+              <label htmlFor="filtroCategoria" className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
+                CATEGORÍA
+              </label>
+              <div className="relative">
+                <select
+                  id="filtroCategoria"
+                  value={categoriaSeleccionada}
+                  onChange={(e) => setCategoriaSeleccionada(e.target.value)}
+                  className="appearance-none bg-card-surface text-ink-black font-label-lg text-label-lg py-space-xs pl-space-md pr-10 shadow-[4px_4px_0px_#000000] focus:outline-none cursor-pointer transition-transform active:translate-x-0.5 active:translate-y-0.5"
+                  style={{ border: '3px solid #000000', borderRadius: '12px' }}
+                >
+                  <option value="">Todas las categorías</option>
+                  {categorias.map((categoria) => (
+                    <option key={categoria.id} value={categoria.id}>
+                      {categoria.descripcion}
+                    </option>
+                  ))}
+                </select>
+                <span className="material-symbols-outlined pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-black font-bold">
+                  arrow_drop_down
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -160,7 +188,7 @@ function Catalogo() {
         )}
 
         {/* Movie grid or empty state */}
-        {peliculas.length === 0 ? (
+        {peliculasFiltradas.length === 0 ? (
           <div
             className="flex flex-col items-center justify-center py-space-xl bg-surface-container-low text-center p-space-md"
             style={{ border: '3px solid #000000', borderRadius: '12px' }}
@@ -172,12 +200,14 @@ function Catalogo() {
               ¡Cintas no encontradas en este pasillo!
             </h3>
             <p className="font-body-md text-body-md text-on-surface-variant max-w-sm mt-1">
-              Parece que el encargado olvidó rebobinar y archivar esta sección. Prueba seleccionando otra categoría.
+              {busqueda
+                ? `No hay películas con "${busqueda}"${categoriaSeleccionada ? ' en esta categoría' : ''}.`
+                : 'Parece que el encargado olvidó rebobinar y archivar esta sección. Prueba seleccionando otra categoría.'}
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-gutter">
-            {peliculas.map((pelicula) => (
+            {peliculasFiltradas.map((pelicula) => (
               <TarjetaPelicula
                 key={pelicula.id}
                 pelicula={pelicula}
