@@ -56,6 +56,7 @@ function Usuarios() {
           return response.json().then((data) => { toast(data.message) })
         }
         setUsuarios((prev) => prev.map((u) => u.id === usuarioId ? { ...u, role: nuevoRol } : u))
+        toast('Rol actualizado.', 'success')
       })
       .catch((err) => { console.error('Error al cambiar rol', err) })
   }
@@ -71,6 +72,7 @@ function Usuarios() {
           return response.json().then((data) => { toast(data.message) })
         }
         setUsuarios((prev) => prev.filter((u) => u.id !== usuarioId))
+        toast('Usuario eliminado.', 'success')
       })
       .catch((err) => { console.error('Error al eliminar usuario', err) })
   }
@@ -81,7 +83,10 @@ function Usuarios() {
       headers: { 'Authorization': `Bearer ${token}` },
     })
       .then((res) => {
-        if (res.ok) setUsuarios((prev) => prev.map((u) => u.id === usuarioId ? { ...u, role: 'VENDEDOR', solicitaVendedor: false } : u))
+        if (res.ok) {
+          setUsuarios((prev) => prev.map((u) => u.id === usuarioId ? { ...u, role: 'VENDEDOR', solicitaVendedor: false } : u))
+          toast('Vendedor aprobado.', 'success')
+        }
       })
       .catch(() => {})
   }
@@ -92,7 +97,10 @@ function Usuarios() {
       headers: { 'Authorization': `Bearer ${token}` },
     })
       .then((res) => {
-        if (res.ok) setUsuarios((prev) => prev.map((u) => u.id === usuarioId ? { ...u, solicitaVendedor: false } : u))
+        if (res.ok) {
+          setUsuarios((prev) => prev.map((u) => u.id === usuarioId ? { ...u, solicitaVendedor: false } : u))
+          toast('Solicitud rechazada.', 'success')
+        }
       })
       .catch(() => {})
   }

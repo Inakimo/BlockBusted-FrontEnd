@@ -29,6 +29,7 @@ function PanelFotos({ pelicula, token, onActualizado, onCerrar }) {
           setArchivo(null)
           const nuevas = Array.isArray(data) ? data : [data]
           onActualizado([...(pelicula.fotos || []), ...nuevas])
+          toast('Foto agregada correctamente.', 'success')
         })
       })
       .catch(() => { setSubiendo(false); toast('Error de conexión.') })
@@ -40,7 +41,10 @@ function PanelFotos({ pelicula, token, onActualizado, onCerrar }) {
       headers: { 'Authorization': `Bearer ${token}` },
     })
       .then((res) => {
-        if (res.ok) onActualizado((pelicula.fotos || []).filter((f) => f.id !== fotoId))
+        if (res.ok) {
+          onActualizado((pelicula.fotos || []).filter((f) => f.id !== fotoId))
+          toast('Foto eliminada.', 'success')
+        }
       })
       .catch(() => toast('Error de conexión.'))
   }

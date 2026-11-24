@@ -35,14 +35,19 @@ function Login() {
     })
       .then((response) => {
         if (!response.ok) {
-          return response.json().then((data) => {
-            if (data.pendiente) {
-              setPendiente(true)
-            } else {
-              setError(data.message || 'Email o contraseña incorrectos')
-            }
-            setCargando(false)
-          })
+          return response.json()
+            .then((data) => {
+              if (data.pendiente) {
+                setPendiente(true)
+              } else {
+                setError(data.message || 'Email o contraseña incorrectos')
+              }
+              setCargando(false)
+            })
+            .catch(() => {
+              setError('Email o contraseña incorrectos')
+              setCargando(false)
+            })
         }
         return response.json().then((data) => {
           const token = data.access_token

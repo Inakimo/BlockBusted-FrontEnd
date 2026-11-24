@@ -47,7 +47,10 @@ function DetallePelicula() {
     })
       .then((res) => {
         setToggleandoFav(false)
-        if (res.ok) setEsFavorito(!esFavorito)
+        if (res.ok) {
+          setEsFavorito(!esFavorito)
+          toast(!esFavorito ? 'Agregado a favoritos.' : 'Eliminado de favoritos.', 'success')
+        }
       })
       .catch(() => setToggleandoFav(false))
   }

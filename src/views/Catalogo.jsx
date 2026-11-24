@@ -18,7 +18,6 @@ function Catalogo() {
   const [busqueda, setBusqueda] = useState('')
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
-  const [mensajeCarrito, setMensajeCarrito] = useState(null)
 
   useEffect(() => {
     Promise.all([
@@ -55,20 +54,12 @@ function Catalogo() {
     })
       .then((response) => {
         if (!response.ok) {
-          return response.json().then((data) => {
-            setMensajeCarrito({ tipo: 'error', texto: data.message })
-            setTimeout(() => setMensajeCarrito(null), 4000)
-          })
+          return response.json().then((data) => toast(data.message || 'No se pudo agregar al carrito.'))
         }
-        setMensajeCarrito({ tipo: 'exito', texto: '¡Película agregada al carrito!' })
-        setTimeout(() => setMensajeCarrito(null), 3000)
+        toast('¡Película agregada al carrito!', 'success')
         dispatch(fetchCantidadCarrito())
       })
-      .catch((error) => {
-        console.error('Error al agregar al carrito', error)
-        setMensajeCarrito({ tipo: 'error', texto: 'No se pudo agregar al carrito.' })
-        setTimeout(() => setMensajeCarrito(null), 4000)
-      })
+      .catch(() => toast('No se pudo agregar al carrito.'))
   }
 
   function handleEliminarPelicula(peliculaId) {
@@ -184,23 +175,6 @@ function Catalogo() {
           </div>
         </div>
 
-        {/* Cart toast message */}
-        {mensajeCarrito && (
-          <div
-            className={`fixed top-24 right-4 sm:right-8 z-50 flex items-center gap-space-sm px-space-md py-space-sm shadow-[4px_4px_0px_#000000] ${mensajeCarrito.tipo === 'exito' ? 'bg-surface-container-highest' : 'bg-secondary-container'}`}
-            style={{ border: '3px solid #000000', borderRadius: '12px' }}
-          >
-            <span
-              className="material-symbols-outlined text-primary-container font-black"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              {mensajeCarrito.tipo === 'exito' ? 'check_circle' : 'error'}
-            </span>
-            <span className="font-label-lg text-label-lg text-cream tracking-wide">
-              {mensajeCarrito.texto}
-            </span>
-          </div>
-        )}
 
         {/* Movie grid or empty state */}
         {peliculasFiltradas.length === 0 ? (

@@ -29,6 +29,7 @@ function PanelEditar({ pelicula, categorias, token, onGuardado, onCancelar }) {
           if (res.status === 403) { toast('No tenés permiso para editar esta película.'); return }
           return res.json().then((d) => toast(d.message))
         }
+        toast('Película actualizada correctamente.', 'success')
         onGuardado({ titulo, descripcion, precio: Number(precio), categoria: catObj })
       })
       .catch(() => toast('Error de conexión.'))

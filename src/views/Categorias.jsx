@@ -66,6 +66,7 @@ function Categorias() {
           setNuevaDescripcion('')
           setCreando(false)
           setCategorias((prev) => [...prev, data])
+          toast('Categoría creada correctamente.', 'success')
         })
       })
       .catch((err) => {
@@ -98,6 +99,7 @@ function Categorias() {
         }
         setEditandoId(null)
         setCategorias((prev) => prev.map((c) => c.id === categoriaId ? { ...c, descripcion: editDescripcion } : c))
+        toast('Categoría actualizada.', 'success')
       })
       .catch((err) => { console.error('Error al editar categoría', err) })
   }
@@ -113,6 +115,7 @@ function Categorias() {
           return response.json().then((data) => { toast(data.message) })
         }
         setCategorias((prev) => prev.filter((c) => c.id !== categoriaId))
+        toast('Categoría eliminada.', 'success')
       })
       .catch((err) => { console.error('Error al eliminar categoría', err) })
   }
