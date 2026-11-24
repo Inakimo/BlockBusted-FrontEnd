@@ -1,21 +1,72 @@
-import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+
+const URL_BASE = 'http://localhost:4002'
+
+const VHS_FORMATS = ['VHS PAL-B', 'BETAMAX HD', 'VHS MONO', 'VHS STEREO', 'VHS SP-MODE', 'BETAMAX SP', 'VHS HI-FI', 'VHS T-160']
+const BADGE_LABELS = ['SERIE Z', 'CLÁSICO', 'PULP', 'HORROR', 'ACCIÓN', 'COMEDIA', 'SCI-FI', 'SUSPENSO']
+
+function PosterPlaceholder() {
+  return (
+    <div className="w-full h-full flex items-center justify-center bg-[#111]">
+      <span className="material-symbols-outlined text-comic-yellow" style={{ fontSize: '64px' }}>movie</span>
+    </div>
+  )
+}
+
+function CardSkeleton({ dark }) {
+  const base = dark ? 'bg-ink-black border-[3px] border-black shadow-[4px_4px_0px_#FFD700]' : 'bg-card-surface border-[3px] border-black shadow-[5px_5px_0px_#000000]'
+  return (
+    <div className={`${base} flex flex-col overflow-hidden animate-pulse`}>
+      <div className={`aspect-[3/4] w-full ${dark ? 'bg-[#1a1a2e]' : 'bg-[#d0c9db]'}`} />
+      <div className={`p-4 flex flex-col gap-3 ${dark ? '' : 'bg-cream'}`}>
+        <div className={`h-3 w-2/3 rounded ${dark ? 'bg-[#333045]' : 'bg-[#c0b9cb]'}`} />
+        <div className={`h-5 w-full rounded ${dark ? 'bg-[#2a273f]' : 'bg-[#b0a9bb]'}`} />
+        <div className={`h-3 w-1/2 rounded ${dark ? 'bg-[#333045]' : 'bg-[#c0b9cb]'}`} />
+      </div>
+    </div>
+  )
+}
 
 function Inicio() {
+  const [peliculas, setPeliculas] = useState([])
+  const [cargando, setCargando] = useState(true)
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    fetch(`${URL_BASE}/api/peliculas`)
+      .then(r => r.json())
+      .then(data => {
+        setPeliculas(Array.isArray(data) ? data : (data.content || []))
+        setCargando(false)
+      })
+      .catch(() => setCargando(false))
+  }, [])
+
+  const principales = peliculas.slice(0, 4)
+  const bside = peliculas.slice(4, 8)
+
   return (
     <div className="w-full bg-comic-bg text-cream font-montserrat">
       {/* MARQUEE CELLULOID TICKER */}
       <div className="w-full bg-comic-yellow border-b-[3px] border-black py-2 overflow-hidden shadow-[0_3px_0px_#000000] relative z-20">
-        <div className="flex items-center justify-around gap-6 whitespace-nowrap font-montserrat text-xs sm:text-sm font-black text-ink-black uppercase tracking-widest">
-          <span className="flex items-center gap-1.5">
-            <span className="text-comic-red">★</span> NUEVOS ESTRENOS EN VHS &amp; BETAMAX{' '}
-            <span className="text-comic-red">★</span>
-          </span>
-          <span className="hidden md:inline-flex items-center gap-1.5">
-            📼 REBOBINE SUS CINTAS O COBRAREMOS $2.00 DE PENALIZACIÓN
-          </span>
-          <span className="flex items-center gap-1.5">
-            💥 100% LIBRE DE CRÍTICA ESPECIALIZADA Y BUEN GUSTO
-          </span>
+        <div
+          className="flex items-center gap-16 whitespace-nowrap font-montserrat text-xs sm:text-sm font-black text-ink-black uppercase tracking-widest"
+          style={{ animation: 'marquee 28s linear infinite' }}
+        >
+          {[0, 1].map((copy) => (
+            <span key={copy} className="flex items-center gap-16 shrink-0">
+              <span className="flex items-center gap-1.5">
+                <span className="text-comic-red">★</span> NUEVOS ESTRENOS EN VHS &amp; BETAMAX <span className="text-comic-red">★</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                📼 REBOBINE SUS CINTAS O COBRAREMOS $2.00 DE PENALIZACIÓN
+              </span>
+              <span className="flex items-center gap-1.5">
+                💥 100% LIBRE DE CRÍTICA ESPECIALIZADA Y BUEN GUSTO
+              </span>
+            </span>
+          ))}
           <span className="hidden lg:inline-flex items-center gap-1.5">
             🍿 PALOMITAS CON MANTEQUILLA RADIACTIVA A SOLO $0.50
           </span>
@@ -106,7 +157,7 @@ function Inicio() {
             </div>
             <div className="flex items-center gap-3">
               <span className="inline-block bg-comic-red text-cream font-montserrat text-xs font-black px-3 py-1 border-2 border-black shadow-[2px_2px_0px_#000000] uppercase">
-                4 TÍTULOS DISPONIBLES EN SALA
+                {principales.length} TÍTULOS DISPONIBLES EN SALA
               </span>
               <Link
                 to="/catalogo"
@@ -119,197 +170,66 @@ function Inicio() {
 
           {/* 4 Primary Posters Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Movie 1: Star Warts */}
-            <article className="bg-card-surface text-ink-black border-[3px] border-black shadow-[5px_5px_0px_#000000] hover:translate-y-[-4px] hover:shadow-[7px_7px_0px_#FFD700] transition-all flex flex-col overflow-hidden">
-              <div className="relative bg-ink-black border-b-[3px] border-black overflow-hidden aspect-[3/4]">
-                <img
-                  alt="Star Warts: Una Nueva Esperanza Rota"
-                  className="w-full h-full object-cover"
-                  src="https://lh3.googleusercontent.com/aida/AEtjO1Uv3AQBzLooKxqRaZHrnewApZ0d98uNjncltoer7UY8-Bi6OvPY7FiMvk9WxzPxZ4tXJzqBp04gn5vGVf9W3AQHGFD2snmgAvJWtetF5QdbYn4hKWFZP_lePjK41sXWKPTv4hq3JEQLt2BaVjYs9B-lelsKgjPx4Hu-YtqP9PCKvbTUXLO-HcwtCdoPttachYDDsJ6Rm-xweqYqwQnYEZzBqnu92ZtEyL6q0myGhea_mcQ-jtazkEZOxGo"
-                />
-                <div className="absolute top-2 left-2 bg-comic-red text-cream font-montserrat text-[11px] px-2 py-0.5 border-2 border-black shadow-[2px_2px_0px_#000000] font-black uppercase rotate-[-4deg]">
-                  CIENCIA FICCIÓN CUTRE - 25% DTO
-                </div>
-                <div className="absolute bottom-2 right-2 bg-comic-yellow text-ink-black font-montserrat text-[11px] px-2 py-0.5 border border-black font-extrabold uppercase">
-                  VHS PAL-B
-                </div>
-              </div>
-              <div className="p-4 flex flex-col flex-1 justify-between bg-cream">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-montserrat text-xs text-muted-gray uppercase font-bold tracking-wider">
-                      AÑO 1977-ISH
-                    </span>
-                    <span className="bg-comic-yellow text-ink-black px-2 py-0.5 font-montserrat text-xs font-black border border-black">
-                      $14.99
-                    </span>
+            {cargando
+              ? Array.from({ length: 4 }).map((_, i) => <CardSkeleton key={i} dark={false} />)
+              : principales.map((peli, i) => {
+              const foto = peli.fotos && peli.fotos.length > 0 ? peli.fotos[0].url : null
+              const tieneDto = peli.descuentoPorcentaje > 0
+              const precioFinal = tieneDto ? Math.round(peli.precio - peli.precio * peli.descuentoPorcentaje / 100) : peli.precio
+              return (
+                <article
+                  key={peli.id}
+                  className="bg-card-surface text-ink-black border-[3px] border-black shadow-[5px_5px_0px_#000000] hover:translate-y-[-4px] hover:shadow-[7px_7px_0px_#FFD700] transition-all flex flex-col overflow-hidden cursor-pointer"
+                  onClick={() => navigate('/pelicula', { state: { peliculaId: peli.id } })}
+                >
+                  <div className="relative bg-ink-black border-b-[3px] border-black overflow-hidden aspect-[3/4]">
+                    {foto
+                      ? <img alt={peli.titulo} className="w-full h-full object-cover" src={foto} />
+                      : <PosterPlaceholder />
+                    }
+                    {tieneDto && (
+                      <div className="absolute top-2 left-2 bg-comic-red text-cream font-montserrat text-[11px] px-2 py-0.5 border-2 border-black shadow-[2px_2px_0px_#000000] font-black uppercase rotate-[-4deg]">
+                        -{peli.descuentoPorcentaje}% DTO
+                      </div>
+                    )}
+                    <div className="absolute bottom-2 right-2 bg-comic-yellow text-ink-black font-montserrat text-[11px] px-2 py-0.5 border border-black font-extrabold uppercase">
+                      {VHS_FORMATS[i % VHS_FORMATS.length]}
+                    </div>
                   </div>
-                  <h3 className="font-bangers text-2xl text-ink-black leading-tight uppercase mb-2">
-                    STAR WARTS: ESPERANZA ROTA
-                  </h3>
-                  <div className="bg-card-surface border-2 border-black p-2 shadow-[2px_2px_0px_#000000] mb-3">
-                    <p className="font-montserrat text-xs text-ink-black italic font-medium">
-                      &quot;¡La espada láser hace ruido de fluorescente de cocina roto!&quot;
-                    </p>
+                  <div className="p-4 flex flex-col flex-1 justify-between bg-cream">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-montserrat text-xs text-muted-gray uppercase font-bold tracking-wider">
+                          {peli.categoria?.descripcion || 'VIDEOCLUB'}
+                        </span>
+                        <span className="bg-comic-yellow text-ink-black px-2 py-0.5 font-montserrat text-xs font-black border border-black">
+                          ${precioFinal}
+                        </span>
+                      </div>
+                      <h3 className="font-bangers text-2xl text-ink-black leading-tight uppercase mb-2">
+                        {peli.titulo}
+                      </h3>
+                      <div className="bg-card-surface border-2 border-black p-2 shadow-[2px_2px_0px_#000000] mb-3">
+                        <p className="font-montserrat text-xs text-ink-black italic font-medium">
+                          {peli.stock > 0 ? `Stock: ${peli.stock} unidades disponibles` : 'Sin stock actualmente'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="pt-2 border-t-2 border-dashed border-gray-400 flex items-center justify-between">
+                      <span className="font-montserrat text-xs text-comic-red uppercase font-extrabold">
+                        CÓD: BB-{peli.id}
+                      </span>
+                      <button
+                        onClick={e => { e.stopPropagation(); navigate('/pelicula', { state: { peliculaId: peli.id } }) }}
+                        className="bg-ink-black text-cream hover:bg-comic-yellow hover:text-ink-black font-montserrat text-xs px-3 py-1 border border-black uppercase font-bold transition-colors"
+                      >
+                        VER
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <div className="pt-2 border-t-2 border-dashed border-gray-400 flex items-center justify-between">
-                  <span className="font-montserrat text-xs text-comic-red uppercase font-extrabold">
-                    DURACIÓN: 84 MIN
-                  </span>
-                  <Link
-                    to="/catalogo"
-                    className="bg-ink-black text-cream hover:bg-comic-yellow hover:text-ink-black font-montserrat text-xs px-3 py-1 border border-black uppercase font-bold transition-colors inline-block text-center"
-                  >
-                    ALQUILAR
-                  </Link>
-                </div>
-              </div>
-            </article>
-
-            {/* Movie 2: Matrix Recargada de Más */}
-            <article className="bg-card-surface text-ink-black border-[3px] border-black shadow-[5px_5px_0px_#000000] hover:translate-y-[-4px] hover:shadow-[7px_7px_0px_#FFD700] transition-all flex flex-col overflow-hidden">
-              <div className="relative bg-ink-black border-b-[3px] border-black overflow-hidden aspect-[3/4]">
-                <img
-                  alt="Matrix Recargada de Más"
-                  className="w-full h-full object-cover"
-                  src="https://lh3.googleusercontent.com/aida/AEtjO1Xhivl7pcO9QsvGbn4AIUknOg8oFh5MwRelGt9LfI97QWNedXnltiwb58-RA8qLoKbRkVFjmMk9n-p8xRXCRw-1z0gX92nBwJZIWv3uxcfoNgDlXSIlbYnt0Rv6RUSiWyF40hzWXd5We0IinlxPl5Uqjl8Twtf9PFII0Egi20btAP73LdGO2RzxbJtAT_sbNor5RjDvdAtZbs4wQpbi_K-6i-tZK2g00C0DTgk9JFz9oHLVH4pZtbUNKy8"
-                />
-                <div className="absolute top-2 left-2 bg-comic-red text-cream font-montserrat text-[11px] px-2 py-0.5 border-2 border-black shadow-[2px_2px_0px_#000000] font-black uppercase rotate-[-3deg]">
-                  BAGUETTES VOLADORAS - 40% DTO
-                </div>
-                <div className="absolute bottom-2 right-2 bg-comic-yellow text-ink-black font-montserrat text-[11px] px-2 py-0.5 border border-black font-extrabold uppercase">
-                  BETAMAX HD
-                </div>
-              </div>
-              <div className="p-4 flex flex-col flex-1 justify-between bg-cream">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-montserrat text-xs text-muted-gray uppercase font-bold tracking-wider">
-                      AÑO 2003 (RE-HECHA)
-                    </span>
-                    <span className="bg-comic-yellow text-ink-black px-2 py-0.5 font-montserrat text-xs font-black border border-black">
-                      $15.00
-                    </span>
-                  </div>
-                  <h3 className="font-bangers text-2xl text-ink-black leading-tight uppercase mb-2">
-                    MATRIX RECARGADA DE MÁS
-                  </h3>
-                  <div className="bg-card-surface border-2 border-black p-2 shadow-[2px_2px_0px_#000000] mb-3">
-                    <p className="font-montserrat text-xs text-ink-black italic font-medium">
-                      &quot;Esquiva barras de pan con gabardina de plástico reciclado.&quot;
-                    </p>
-                  </div>
-                </div>
-                <div className="pt-2 border-t-2 border-dashed border-gray-400 flex items-center justify-between">
-                  <span className="font-montserrat text-xs text-comic-red uppercase font-extrabold">
-                    DURACIÓN: 102 MIN
-                  </span>
-                  <Link
-                    to="/catalogo"
-                    className="bg-ink-black text-cream hover:bg-comic-yellow hover:text-ink-black font-montserrat text-xs px-3 py-1 border border-black uppercase font-bold transition-colors inline-block text-center"
-                  >
-                    ALQUILAR
-                  </Link>
-                </div>
-              </div>
-            </article>
-
-            {/* Movie 3: Termineitor: Juicio Final Express */}
-            <article className="bg-card-surface text-ink-black border-[3px] border-black shadow-[5px_5px_0px_#000000] hover:translate-y-[-4px] hover:shadow-[7px_7px_0px_#FFD700] transition-all flex flex-col overflow-hidden">
-              <div className="relative bg-ink-black border-b-[3px] border-black overflow-hidden aspect-[3/4]">
-                <img
-                  alt="Termineitor: Juicio Final Express"
-                  className="w-full h-full object-cover"
-                  src="https://lh3.googleusercontent.com/aida/AEtjO1Wbx1lUhZHdIdaCSUu3jqrqm6YA-sAH4Wsb7aYLk8jUUlFwW3G_PQvEnTNA-5uCTLPUwBysfusDxu7dpgyGCXkFSNcdu7uAgaeUBGRRG6nUAtGh_vPl42m-Ly-6lSRN1U-YOecxag8mKNB6W_U7VFdBtzAcJMG1sQ4GPiMfnOO1XZLqV52Fog7M6NtshXjnUc-foOKjeROarsMumnq7zjeIrZ8vHfLUPVx-q8flOrW_KKVoE5UY0SyWkHc"
-                />
-                <div className="absolute top-2 left-2 bg-comic-red text-cream font-montserrat text-[11px] px-2 py-0.5 border-2 border-black shadow-[2px_2px_0px_#000000] font-black uppercase rotate-[-5deg]">
-                  EN VESPINO - 10% DTO
-                </div>
-                <div className="absolute bottom-2 right-2 bg-comic-yellow text-ink-black font-montserrat text-[11px] px-2 py-0.5 border border-black font-extrabold uppercase">
-                  VHS MONO
-                </div>
-              </div>
-              <div className="p-4 flex flex-col flex-1 justify-between bg-cream">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-montserrat text-xs text-muted-gray uppercase font-bold tracking-wider">
-                      AÑO 1991 (CASI)
-                    </span>
-                    <span className="bg-comic-yellow text-ink-black px-2 py-0.5 font-montserrat text-xs font-black border border-black">
-                      $15.75
-                    </span>
-                  </div>
-                  <h3 className="font-bangers text-2xl text-ink-black leading-tight uppercase mb-2">
-                    TERMINEITOR: JUICIO FINAL
-                  </h3>
-                  <div className="bg-card-surface border-2 border-black p-2 shadow-[2px_2px_0px_#000000] mb-3">
-                    <p className="font-montserrat text-xs text-ink-black italic font-medium">
-                      &quot;¡Volveré... en cuanto le ponga dos euros de mezcla al vespino!&quot;
-                    </p>
-                  </div>
-                </div>
-                <div className="pt-2 border-t-2 border-dashed border-gray-400 flex items-center justify-between">
-                  <span className="font-montserrat text-xs text-comic-red uppercase font-extrabold">
-                    DURACIÓN: 96 MIN
-                  </span>
-                  <Link
-                    to="/catalogo"
-                    className="bg-ink-black text-cream hover:bg-comic-yellow hover:text-ink-black font-montserrat text-xs px-3 py-1 border border-black uppercase font-bold transition-colors inline-block text-center"
-                  >
-                    ALQUILAR
-                  </Link>
-                </div>
-              </div>
-            </article>
-
-            {/* Movie 4: Cazafantasmas de Barrio */}
-            <article className="bg-card-surface text-ink-black border-[3px] border-black shadow-[5px_5px_0px_#000000] hover:translate-y-[-4px] hover:shadow-[7px_7px_0px_#FFD700] transition-all flex flex-col overflow-hidden">
-              <div className="relative bg-ink-black border-b-[3px] border-black overflow-hidden aspect-[3/4]">
-                <img
-                  alt="Cazafantasmas de Barrio"
-                  className="w-full h-full object-cover"
-                  src="https://lh3.googleusercontent.com/aida/AEtjO1U_4yUx-EfOgHllWe3OShGljEfX7ibKNd4YkGHbkv8l5_KA__cPm-C0EfPvqDbXfm8CEKAl8ah4O_SZnb7D8FjaV7HvwpSmc9NPOR4SFD_M79y8LlcIUOKH1FDb2DIuqyceYwpJOGl-bM6LmRLzIcozpmXUrRozNPKy_XQ16lPPj3yKrX0zBGmwiOxSIa7HItck2Hsz7JZW-6LPo3QmwRcoSqb2iMflig49eeZWDFAgqP2c1VXRYEOXYA"
-                />
-                <div className="absolute top-2 left-2 bg-comic-red text-cream font-montserrat text-[11px] px-2 py-0.5 border-2 border-black shadow-[2px_2px_0px_#000000] font-black uppercase rotate-[3deg]">
-                  ASPIRADORAS - 35% DTO
-                </div>
-                <div className="absolute bottom-2 right-2 bg-comic-yellow text-ink-black font-montserrat text-[11px] px-2 py-0.5 border border-black font-extrabold uppercase">
-                  VHS STEREO
-                </div>
-              </div>
-              <div className="p-4 flex flex-col flex-1 justify-between bg-cream">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-montserrat text-xs text-muted-gray uppercase font-bold tracking-wider">
-                      AÑO 1984 BARATO
-                    </span>
-                    <span className="bg-comic-yellow text-ink-black px-2 py-0.5 font-montserrat text-xs font-black border border-black">
-                      $13.65
-                    </span>
-                  </div>
-                  <h3 className="font-bangers text-2xl text-ink-black leading-tight uppercase mb-2">
-                    CAZAFANTASMAS DE BARRIO
-                  </h3>
-                  <div className="bg-card-surface border-2 border-black p-2 shadow-[2px_2px_0px_#000000] mb-3">
-                    <p className="font-montserrat text-xs text-ink-black italic font-medium">
-                      &quot;No cruces las aspiradoras, que salta el diferencial del bloque.&quot;
-                    </p>
-                  </div>
-                </div>
-                <div className="pt-2 border-t-2 border-dashed border-gray-400 flex items-center justify-between">
-                  <span className="font-montserrat text-xs text-comic-red uppercase font-extrabold">
-                    DURACIÓN: 91 MIN
-                  </span>
-                  <Link
-                    to="/catalogo"
-                    className="bg-ink-black text-cream hover:bg-comic-yellow hover:text-ink-black font-montserrat text-xs px-3 py-1 border border-black uppercase font-bold transition-colors inline-block text-center"
-                  >
-                    ALQUILAR
-                  </Link>
-                </div>
-              </div>
-            </article>
+                </article>
+              )
+            })}
           </div>
         </div>
       </section>
@@ -422,109 +342,46 @@ function Inicio() {
 
           {/* 4 B-Side Posters Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* B-Side 1: Bat-Maníaco */}
-            <div className="bg-ink-black border-[3px] border-black shadow-[4px_4px_0px_#FFD700] p-3 flex flex-col group">
-              <div className="relative overflow-hidden aspect-[3/4] border-2 border-[#333045] mb-3 bg-[#111]">
-                <img
-                  alt="Bat-Maníaco: El Caballero Trasnochado"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  src="https://lh3.googleusercontent.com/aida/AEtjO1WDhMGCPbQE6ng8wTutIeoamTwbcFlCzjdqbtuA6Jp_UAhzMC41-c4gws3BWiowbPe5yzfTvn0tBRJKHTuXLFER8Zek6hXB06uIpp2QwesvPJkSOorkRDnCnFySIacOWLl6ZGaeHHwIJDY05S3rJR845RlhK8ILuK9CDeMDF4JO2i4EulDS_CFQUQykqFl5BHgfungsybKrVr897R37-EEFsGw_8QuhI986b8h_74powEHqJ1FoZVyLRw"
-                />
-                <span className="absolute top-2 right-2 bg-comic-red text-cream font-montserrat text-[10px] px-2 py-0.5 border border-black font-bold uppercase">
-                  SERIE Z
-                </span>
-              </div>
-              <h4 className="font-bangers text-xl text-cream uppercase mb-1">
-                BAT-MANÍACO: TRASNOCHADO
-              </h4>
-              <p className="font-montserrat text-xs text-[#A09BAC] mb-3 flex-1 leading-relaxed">
-                Un vigilante con pijama viejo, insomnio severo y adicción al café recalentado de termo.
-              </p>
-              <div className="flex items-center justify-between pt-2 border-t border-[#333045]">
-                <span className="font-montserrat text-xs text-comic-yellow font-black">$9.99 / DÍA</span>
-                <Link to="/catalogo" className="font-montserrat text-xs text-cream uppercase underline hover:text-comic-yellow">
-                  DETALLES
-                </Link>
-              </div>
-            </div>
-
-            {/* B-Side 2: Jurassic Pork */}
-            <div className="bg-ink-black border-[3px] border-black shadow-[4px_4px_0px_#FFD700] p-3 flex flex-col group">
-              <div className="relative overflow-hidden aspect-[3/4] border-2 border-[#333045] mb-3 bg-[#111]">
-                <img
-                  alt="Jurassic Pork: Parque Porcino"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  src="https://lh3.googleusercontent.com/aida/AEtjO1WPTQ4CrxqhhbpcO9svxP9e8zv_OvZ-zrvV8piSUvw3ha9uLRivqom7Hq0298dYTGYXZuZKAFpP8Q9b0GHGAIaYdyzK1VW6kvQSmigSo0Nqj9ozcQXBAbI5BnbTK_1ImH2DSiKv9zY4wArs2sNASz1HY4MSBcubvmOGeT0HBQQ1nzqT8DfCHdVRdeZasc8hcoKOsTFB3HwihwOs85aOLca4cYJ1gdD_lS4NJppubiJRdFvFcR_zt4pvgK8"
-                />
-                <span className="absolute top-2 right-2 bg-comic-red text-cream font-montserrat text-[10px] px-2 py-0.5 border border-black font-bold uppercase">
-                  CLÁSICO
-                </span>
-              </div>
-              <h4 className="font-bangers text-xl text-cream uppercase mb-1">
-                JURASSIC PORK: PARQUE PORCINO
-              </h4>
-              <p className="font-montserrat text-xs text-[#A09BAC] mb-3 flex-1 leading-relaxed">
-                Cerdos gigantes de corral clonan embutidos ibéricos y siembran el pánico en la verbena.
-              </p>
-              <div className="flex items-center justify-between pt-2 border-t border-[#333045]">
-                <span className="font-montserrat text-xs text-comic-yellow font-black">$11.20 / DÍA</span>
-                <Link to="/catalogo" className="font-montserrat text-xs text-cream uppercase underline hover:text-comic-yellow">
-                  DETALLES
-                </Link>
-              </div>
-            </div>
-
-            {/* B-Side 3: Pulp Friction */}
-            <div className="bg-ink-black border-[3px] border-black shadow-[4px_4px_0px_#FFD700] p-3 flex flex-col group">
-              <div className="relative overflow-hidden aspect-[3/4] border-2 border-[#333045] mb-3 bg-[#111]">
-                <img
-                  alt="Pulp Friction: Ficción Barata"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  src="https://lh3.googleusercontent.com/aida/AEtjO1VJmYpcbY-G24R9XNFNLqP1poDWv8JPrHbpXsDKEDaNrgj-pnQnuTA3QMERSJEE06OfTTbW3R2o4oN9iYwYPNLPUBj_P42F0gMkRGxBJ9X_oLzJlt-M72cGdSeWjPW2wLsLRvihyRKBvwqaYt-AzLYBb6oKcHyuQd5XiaDGZu-EBhJGZsyZJkRtCFPl7ysI0nBalynAeDyJ6H8sYtYxgeVsOC1l7K8ZyAWnm3DAPwKmFR3_NrxOsqBjiyA"
-                />
-                <span className="absolute top-2 right-2 bg-comic-red text-cream font-montserrat text-[10px] px-2 py-0.5 border border-black font-bold uppercase">
-                  PULP
-                </span>
-              </div>
-              <h4 className="font-bangers text-xl text-cream uppercase mb-1">
-                PULP FRICTION: FICCIÓN BARATA
-              </h4>
-              <p className="font-montserrat text-xs text-[#A09BAC] mb-3 flex-1 leading-relaxed">
-                Dos matones en traje barato debaten durante dos horas sobre la salsa del cuarto de libra.
-              </p>
-              <div className="flex items-center justify-between pt-2 border-t border-[#333045]">
-                <span className="font-montserrat text-xs text-comic-yellow font-black">$10.50 / DÍA</span>
-                <Link to="/catalogo" className="font-montserrat text-xs text-cream uppercase underline hover:text-comic-yellow">
-                  DETALLES
-                </Link>
-              </div>
-            </div>
-
-            {/* B-Side 4: Pesadilla en la Calle del Pan */}
-            <div className="bg-ink-black border-[3px] border-black shadow-[4px_4px_0px_#FFD700] p-3 flex flex-col group">
-              <div className="relative overflow-hidden aspect-[3/4] border-2 border-[#333045] mb-3 bg-[#111]">
-                <img
-                  alt="Pesadilla en la Calle del Pan"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  src="https://lh3.googleusercontent.com/aida/AEtjO1WcET7cDXqUSkowumkCMqXF9KFnE6dkOOLizWglZPoCGL3Mn194n2BFfxVWXgFGe6kHAQ3Kk90KmT-gLhCdkt0cIxKrfuWCsEy2zRaKv-_EwUMHNVC8qtyavxSgwFVlmFowS4yk-KbiOIPW6X_l7ZIOXzXH2jpoWSwv63dedo0_Vc35gmGk4dxs6MGwHXHVI1jAH4LroDsQmV9zfFHYweDvMevTYhJQlHJj8Dt2pCKLWLsjnKZTzZxaS8c"
-                />
-                <span className="absolute top-2 right-2 bg-comic-red text-cream font-montserrat text-[10px] px-2 py-0.5 border border-black font-bold uppercase">
-                  HORROR
-                </span>
-              </div>
-              <h4 className="font-bangers text-xl text-cream uppercase mb-1">
-                PESADILLA: CALLE DEL PAN
-              </h4>
-              <p className="font-montserrat text-xs text-[#A09BAC] mb-3 flex-1 leading-relaxed">
-                Un panadero siniestro con guantes de horno persigue a los noctámbulos con masa madre ácida.
-              </p>
-              <div className="flex items-center justify-between pt-2 border-t border-[#333045]">
-                <span className="font-montserrat text-xs text-comic-yellow font-black">$8.75 / DÍA</span>
-                <Link to="/catalogo" className="font-montserrat text-xs text-cream uppercase underline hover:text-comic-yellow">
-                  DETALLES
-                </Link>
-              </div>
-            </div>
+            {cargando
+              ? Array.from({ length: 4 }).map((_, i) => <CardSkeleton key={i} dark={true} />)
+              : bside.map((peli, i) => {
+              const foto = peli.fotos && peli.fotos.length > 0 ? peli.fotos[0].url : null
+              const precioFinal = peli.descuentoPorcentaje > 0
+                ? Math.round(peli.precio - peli.precio * peli.descuentoPorcentaje / 100)
+                : peli.precio
+              return (
+                <div
+                  key={peli.id}
+                  className="bg-ink-black border-[3px] border-black shadow-[4px_4px_0px_#FFD700] p-3 flex flex-col group cursor-pointer"
+                  onClick={() => navigate('/pelicula', { state: { peliculaId: peli.id } })}
+                >
+                  <div className="relative overflow-hidden aspect-[3/4] border-2 border-[#333045] mb-3 bg-[#111]">
+                    {foto
+                      ? <img alt={peli.titulo} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src={foto} />
+                      : <PosterPlaceholder />
+                    }
+                    <span className="absolute top-2 right-2 bg-comic-red text-cream font-montserrat text-[10px] px-2 py-0.5 border border-black font-bold uppercase">
+                      {peli.categoria?.descripcion || BADGE_LABELS[i % BADGE_LABELS.length]}
+                    </span>
+                  </div>
+                  <h4 className="font-bangers text-xl text-cream uppercase mb-1">
+                    {peli.titulo}
+                  </h4>
+                  <p className="font-montserrat text-xs text-[#A09BAC] mb-3 flex-1 leading-relaxed">
+                    {peli.stock > 0 ? `${peli.stock} unidades en stock` : 'Sin stock'}
+                  </p>
+                  <div className="flex items-center justify-between pt-2 border-t border-[#333045]">
+                    <span className="font-montserrat text-xs text-comic-yellow font-black">${precioFinal} / DÍA</span>
+                    <button
+                      onClick={e => { e.stopPropagation(); navigate('/pelicula', { state: { peliculaId: peli.id } }) }}
+                      className="font-montserrat text-xs text-cream uppercase underline hover:text-comic-yellow bg-transparent border-none cursor-pointer"
+                    >
+                      DETALLES
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       </section>

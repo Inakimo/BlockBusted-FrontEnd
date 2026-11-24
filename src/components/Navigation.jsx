@@ -1,6 +1,15 @@
 import { Link } from 'react-router-dom'
+import { useSelector, useDispatch } from 'react-redux'
+import { logout } from '../store/authSlice'
 
-function Navigation({ usuario, onLogout, cantidadCarrito }) {
+function Navigation() {
+  const dispatch = useDispatch()
+  const usuario = useSelector((s) => s.auth.usuario)
+  const cantidadCarrito = useSelector((s) => s.carrito.cantidad)
+
+  function onLogout() {
+    dispatch(logout())
+  }
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#0c0b12] border-b-[3px] border-black shadow-[0_4px_0px_#000000]">
       <div className="max-w-[1280px] mx-auto px-4 md:px-6 h-[72px] flex items-center justify-between gap-4">
@@ -47,6 +56,13 @@ function Navigation({ usuario, onLogout, cantidadCarrito }) {
 
           {usuario && usuario.role === 'COMPRADOR' && (
             <>
+              <Link
+                to="/favoritos"
+                className="font-montserrat font-bold text-sm uppercase text-cream hover:text-comic-yellow transition-colors tracking-wide inline-flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
+                <span className="hidden sm:inline">Favoritos</span>
+              </Link>
               <Link
                 to="/carrito"
                 className="relative font-montserrat font-bold text-sm uppercase text-cream hover:text-comic-yellow transition-colors tracking-wide inline-flex items-center gap-1"

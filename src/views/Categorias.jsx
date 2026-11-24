@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react'
+import { useSelector } from 'react-redux'
+import { toast } from '../utils/toast.js'
+import PageLoading from '../components/PageLoading.jsx'
+import PageError from '../components/PageError.jsx'
 
 const URL_BASE = 'http://localhost:4002'
 
-function Categorias({ token }) {
+function Categorias() {
+  const token = useSelector((s) => s.auth.token)
   const [categorias, setCategorias] = useState([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
@@ -37,7 +42,7 @@ function Categorias({ token }) {
 
   function handleCrear(e) {
     e.preventDefault()
-    if (nuevaDescripcion.trim() === '') { alert('La descripción es obligatoria'); return }
+    if (nuevaDescripcion.trim() === '') { toast('La descripción es obligatoria'); return }
 
     setCreando(true)
     setErrorCrear(null)
@@ -57,10 +62,10 @@ function Categorias({ token }) {
             setCreando(false)
           })
         }
-        return response.json().then(() => {
+        return response.json().then((data) => {
           setNuevaDescripcion('')
           setCreando(false)
-          cargarCategorias()
+          setCategorias((prev) => [...prev, data])
         })
       })
       .catch((err) => {
@@ -76,7 +81,7 @@ function Categorias({ token }) {
   }
 
   function handleGuardarEdicion(categoriaId) {
-    if (editDescripcion.trim() === '') { alert('La descripción es obligatoria'); return }
+    if (editDescripcion.trim() === '') { toast('La descripción es obligatoria'); return }
 
     fetch(`${URL_BASE}/api/categorias/${categoriaId}`, {
       method: 'PUT',
@@ -88,11 +93,11 @@ function Categorias({ token }) {
     })
       .then((response) => {
         if (!response.ok) {
-          if (response.status === 403) { alert('No tenés permiso para editar esta categoría.'); return }
-          return response.json().then((data) => { alert(data.message) })
+          if (response.status === 403) { toast('No tenés permiso para editar esta categoría.'); return }
+          return response.json().then((data) => { toast(data.message) })
         }
         setEditandoId(null)
-        cargarCategorias()
+        setCategorias((prev) => prev.map((c) => c.id === categoriaId ? { ...c, descripcion: editDescripcion } : c))
       })
       .catch((err) => { console.error('Error al editar categoría', err) })
   }
@@ -104,16 +109,16 @@ function Categorias({ token }) {
     })
       .then((response) => {
         if (!response.ok) {
-          if (response.status === 403) { alert('No tenés permiso para eliminar esta categoría.'); return }
-          return response.json().then((data) => { alert(data.message) })
+          if (response.status === 403) { toast('No tenés permiso para eliminar esta categoría.'); return }
+          return response.json().then((data) => { toast(data.message) })
         }
-        cargarCategorias()
+        setCategorias((prev) => prev.filter((c) => c.id !== categoriaId))
       })
       .catch((err) => { console.error('Error al eliminar categoría', err) })
   }
 
-  if (cargando && categorias.length === 0) return <p className="text-center text-cream font-body-lg text-body-lg py-space-xl">Cargando categorías...</p>
-  if (error) return <p className="text-center text-secondary-container font-body-lg text-body-lg py-space-xl">{error}</p>
+  if (cargando && categorias.length === 0) return <PageLoading texto="Cargando categorías..." />
+  if (error) return <PageError texto={error} />
 
   return (
     <section className="relative w-full overflow-hidden pb-space-xl">

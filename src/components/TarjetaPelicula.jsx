@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useSelector } from 'react-redux'
 
-function TarjetaPelicula({ pelicula, token, usuario, onAgregarAlCarrito }) {
+function TarjetaPelicula({ pelicula, onAgregarAlCarrito }) {
+  const usuario = useSelector((s) => s.auth.usuario)
   const [cantidad, setCantidad] = useState(1)
   const navigate = useNavigate()
 

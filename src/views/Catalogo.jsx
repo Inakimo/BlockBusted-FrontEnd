@@ -1,9 +1,15 @@
 import { useState, useEffect } from 'react'
+import { useSelector, useDispatch } from 'react-redux'
+import { fetchCantidadCarrito } from '../store/carritoSlice'
 import TarjetaPelicula from '../components/TarjetaPelicula.jsx'
+import PageLoading from '../components/PageLoading.jsx'
+import PageError from '../components/PageError.jsx'
 
 const URL_BASE = 'http://localhost:4002'
 
-function Catalogo({ token, usuario, onCarritoActualizado }) {
+function Catalogo() {
+  const dispatch = useDispatch()
+  const token = useSelector((s) => s.auth.token)
   const [peliculas, setPeliculas] = useState([])
   const [categorias, setCategorias] = useState([])
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('')
@@ -59,7 +65,7 @@ function Catalogo({ token, usuario, onCarritoActualizado }) {
         }
         setMensajeCarrito({ tipo: 'exito', texto: '¡Película agregada al carrito!' })
         setTimeout(() => setMensajeCarrito(null), 3000)
-        if (onCarritoActualizado) onCarritoActualizado()
+        dispatch(fetchCantidadCarrito())
       })
       .catch((error) => {
         console.error('Error al agregar al carrito', error)
@@ -68,28 +74,8 @@ function Catalogo({ token, usuario, onCarritoActualizado }) {
       })
   }
 
-  if (cargando) {
-    return (
-      <div className="max-w-7xl mx-auto w-full px-margin-sm lg:px-margin py-space-lg">
-        <p className="font-headline-md text-headline-md text-cream uppercase tracking-wider text-center">
-          Cargando películas...
-        </p>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="max-w-7xl mx-auto w-full px-margin-sm lg:px-margin py-space-lg">
-        <p
-          className="font-headline-sm text-headline-sm text-cream uppercase tracking-wider text-center bg-secondary-container p-space-md shadow-[4px_4px_0px_#000000]"
-          style={{ border: '3px solid #000000', borderRadius: '8px' }}
-        >
-          {error}
-        </p>
-      </div>
-    )
-  }
+  if (cargando) return <PageLoading texto="Cargando películas..." />
+  if (error) return <PageError texto={error} />
 
   return (
     <section className="w-full">
@@ -195,8 +181,6 @@ function Catalogo({ token, usuario, onCarritoActualizado }) {
               <TarjetaPelicula
                 key={pelicula.id}
                 pelicula={pelicula}
-                token={token}
-                usuario={usuario}
                 onAgregarAlCarrito={handleAgregarAlCarrito}
               />
             ))}

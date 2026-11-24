@@ -1,8 +1,13 @@
 import { useState } from 'react'
+import { useSelector, useDispatch } from 'react-redux'
+import { updateUsuario } from '../store/authSlice'
+import { toast } from '../utils/toast.js'
 
 const URL_BASE = 'http://localhost:4002'
 
-function MiPerfil({ token, usuario, onActualizarUsuario }) {
+function MiPerfil() {
+  const dispatch = useDispatch()
+  const { token, usuario } = useSelector((s) => s.auth)
   const [username, setUsername] = useState(usuario ? usuario.username : '')
   const [firstName, setFirstName] = useState(usuario ? usuario.firstName : '')
   const [lastName, setLastName] = useState(usuario ? usuario.lastName : '')
@@ -13,9 +18,9 @@ function MiPerfil({ token, usuario, onActualizarUsuario }) {
   function handleSubmit(e) {
     e.preventDefault()
 
-    if (username.trim() === '') { alert('El nombre de usuario es obligatorio'); return }
-    if (firstName.trim() === '') { alert('El nombre es obligatorio'); return }
-    if (lastName.trim() === '') { alert('El apellido es obligatorio'); return }
+    if (username.trim() === '') { toast('El nombre de usuario es obligatorio'); return }
+    if (firstName.trim() === '') { toast('El nombre es obligatorio'); return }
+    if (lastName.trim() === '') { toast('El apellido es obligatorio'); return }
 
     setGuardando(true)
     setError(null)
@@ -37,7 +42,7 @@ function MiPerfil({ token, usuario, onActualizarUsuario }) {
           })
         }
         return response.json().then((data) => {
-          onActualizarUsuario(data)
+          dispatch(updateUsuario(data))
           setExito(true)
           setGuardando(false)
         })

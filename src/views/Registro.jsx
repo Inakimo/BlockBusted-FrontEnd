@@ -1,9 +1,14 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { useDispatch } from 'react-redux'
+import { login } from '../store/authSlice'
+import { fetchCantidadCarrito } from '../store/carritoSlice'
+import { toast } from '../utils/toast.js'
 
 const URL_BASE = 'http://localhost:4002'
 
-function Registro({ onLogin }) {
+function Registro() {
+  const dispatch = useDispatch()
   const [username, setUsername] = useState('')
   const [firstname, setFirstname] = useState('')
   const [lastname, setLastname] = useState('')
@@ -18,11 +23,12 @@ function Registro({ onLogin }) {
   function handleSubmit(e) {
     e.preventDefault()
 
-    if (username.trim() === '') { alert('El nombre de usuario es obligatorio'); return }
-    if (firstname.trim() === '') { alert('El nombre es obligatorio'); return }
-    if (lastname.trim() === '') { alert('El apellido es obligatorio'); return }
-    if (email.trim() === '') { alert('El email es obligatorio'); return }
-    if (password.trim() === '') { alert('La contraseña es obligatoria'); return }
+    if (username.trim() === '') { toast('El nombre de usuario es obligatorio'); return }
+    if (firstname.trim() === '') { toast('El nombre es obligatorio'); return }
+    if (lastname.trim() === '') { toast('El apellido es obligatorio'); return }
+    if (email.trim() === '') { toast('El email es obligatorio'); return }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { toast('El email no es válido'); return }
+    if (password.trim() === '') { toast('La contraseña es obligatoria'); return }
 
     setCargando(true)
     setError(null)
@@ -47,7 +53,8 @@ function Registro({ onLogin }) {
           })
             .then((res) => res.json())
             .then((usuario) => {
-              onLogin(token, usuario)
+              dispatch(login({ token, usuario }))
+              dispatch(fetchCantidadCarrito())
               navigate('/')
             })
             .catch((err) => {
@@ -188,7 +195,7 @@ function Registro({ onLogin }) {
               <div className="relative">
                 <input
                   id="email"
-                  type="email"
+                  type="text"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="tu@email.com"
@@ -242,8 +249,8 @@ function Registro({ onLogin }) {
                   className="w-full bg-cream font-body-md text-body-md text-ink-black px-3.5 py-2.5 appearance-none cursor-pointer outline-none transition-all focus:shadow-[3px_3px_0px_#1E88E5]"
                   style={{ border: '3px solid #000000', borderRadius: '4px' }}
                 >
-                  <option value="COMPRADOR">Comprador (Quiero alquilar y comprar)</option>
-                  <option value="VENDEDOR">Vendedor (Quiero publicar parodias)</option>
+                  <option value="COMPRADOR">Comprador — Alquilar y comprar</option>
+                  <option value="VENDEDOR">Vendedor — Publicar catálogo (requiere aprobación)</option>
                 </select>
                 <div
                   className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none bg-primary-container"
@@ -254,6 +261,15 @@ function Registro({ onLogin }) {
                   </span>
                 </div>
               </div>
+              {role === 'VENDEDOR' && (
+                <div
+                  className="mt-2 flex items-center gap-2 bg-[#fef3c7] text-ink-black font-body-sm text-body-sm px-3 py-2"
+                  style={{ border: '2px solid #000000', borderRadius: '4px' }}
+                >
+                  <span className="material-symbols-outlined text-[16px] flex-shrink-0">hourglass_empty</span>
+                  <span>Tu cuenta se creará como <strong>Comprador</strong> hasta que un admin apruebe tu solicitud de vendedor.</span>
+                </div>
+              )}
             </div>
 
             {/* CTA button */}

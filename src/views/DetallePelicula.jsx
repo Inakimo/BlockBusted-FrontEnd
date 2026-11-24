@@ -1,19 +1,53 @@
 import { useState, useEffect } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { useSelector, useDispatch } from 'react-redux'
+import { fetchCantidadCarrito } from '../store/carritoSlice'
+import PageLoading from '../components/PageLoading.jsx'
+import PageError from '../components/PageError.jsx'
+import GaleriaFotos from '../components/GaleriaFotos.jsx'
 
 const URL_BASE = 'http://localhost:4002'
 
-function DetallePelicula({ token, usuario, onCarritoActualizado }) {
+function DetallePelicula() {
+  const dispatch = useDispatch()
+  const { token, usuario } = useSelector((s) => s.auth)
   const location = useLocation()
   const navigate = useNavigate()
-  const peliculaId = location.state && location.state.peliculaId
+  const [searchParams] = useSearchParams()
+  const peliculaId = (location.state && location.state.peliculaId) || searchParams.get('id')
 
   const [pelicula, setPelicula] = useState(null)
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
-  const [fotoActiva, setFotoActiva] = useState(0)
   const [cantidad, setCantidad] = useState(1)
   const [mensajeCarrito, setMensajeCarrito] = useState(null)
+  const [esFavorito, setEsFavorito] = useState(false)
+  const [toggleandoFav, setToggleandoFav] = useState(false)
+
+  useEffect(() => {
+    if (peliculaId && token && usuario && usuario.role === 'COMPRADOR') {
+      fetch(`${URL_BASE}/api/favoritos/${peliculaId}/check`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      })
+        .then((res) => { if (res.ok) return res.json().then((d) => setEsFavorito(d.esFavorito)) })
+        .catch(() => {})
+    }
+  }, [peliculaId, token, usuario])
+
+  function handleToggleFavorito() {
+    if (!token || !usuario || usuario.role !== 'COMPRADOR') { navigate('/login'); return }
+    setToggleandoFav(true)
+    const method = esFavorito ? 'DELETE' : 'POST'
+    fetch(`${URL_BASE}/api/favoritos/${pelicula.id}`, {
+      method,
+      headers: { 'Authorization': `Bearer ${token}` },
+    })
+      .then((res) => {
+        setToggleandoFav(false)
+        if (res.ok) setEsFavorito(!esFavorito)
+      })
+      .catch(() => setToggleandoFav(false))
+  }
 
   useEffect(() => {
     if (!peliculaId) {
@@ -60,7 +94,7 @@ function DetallePelicula({ token, usuario, onCarritoActualizado }) {
         }
         setMensajeCarrito({ tipo: 'exito', texto: '¡Película agregada al carrito!' })
         setTimeout(() => setMensajeCarrito(null), 3000)
-        if (onCarritoActualizado) onCarritoActualizado()
+        dispatch(fetchCantidadCarrito())
       })
       .catch((err) => {
         console.error('Error al agregar al carrito', err)
@@ -68,20 +102,8 @@ function DetallePelicula({ token, usuario, onCarritoActualizado }) {
       })
   }
 
-  if (cargando) {
-    return (
-      <div className="w-full max-w-5xl mx-auto px-margin-sm py-space-md">
-        <p className="font-headline-md text-headline-md text-cream text-center">Cargando película...</p>
-      </div>
-    )
-  }
-  if (error) {
-    return (
-      <div className="w-full max-w-5xl mx-auto px-margin-sm py-space-md">
-        <p className="font-headline-md text-headline-md text-secondary-container text-center">{error}</p>
-      </div>
-    )
-  }
+  if (cargando) return <PageLoading texto="Cargando película..." />
+  if (error) return <PageError texto={error} />
   if (!pelicula) return null
 
   const tieneDescuento = pelicula.descuentoPorcentaje > 0
@@ -121,48 +143,12 @@ function DetallePelicula({ token, usuario, onCarritoActualizado }) {
 
           {/* Left: poster */}
           <div className="md:col-span-5 flex flex-col gap-space-xs">
-            <div
-              className="bg-card-surface shadow-[6px_6px_0px_#000000] p-space-sm relative"
-              style={{ border: '4px solid #000000', borderRadius: '10px' }}
-            >
-              <div
-                className="relative w-full bg-ink-black overflow-hidden"
-                style={{ border: '3px solid #000000', borderRadius: '4px', aspectRatio: '3/4' }}
-              >
-                {fotos ? (
-                  <img src={fotos[fotoActiva].url} alt={pelicula.titulo} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <span className="material-symbols-outlined text-primary-container text-[80px]">movie</span>
-                  </div>
-                )}
-                {tieneDescuento && (
-                  <div
-                    className="absolute top-2 right-2 bg-secondary-container text-cream font-label-md px-space-sm py-0.5 shadow-[2px_2px_0_#000000] uppercase"
-                    style={{ border: '2px solid #000000', transform: 'rotate(4deg)' }}
-                  >
-                    -{pelicula.descuentoPorcentaje}%
-                  </div>
-                )}
-              </div>
-
-              {/* Thumbnails inline */}
-              {fotos && fotos.length > 1 && (
-                <div className="mt-space-xs grid grid-cols-4 gap-space-xs">
-                  {fotos.map((foto, indice) => (
-                    <button
-                      key={foto.id}
-                      type="button"
-                      onClick={() => setFotoActiva(indice)}
-                      className={`overflow-hidden shadow-[1px_1px_0_#000] aspect-square cursor-pointer ${indice === fotoActiva ? 'ring-2 ring-primary-container' : ''}`}
-                      style={{ border: '2px solid #000000', borderRadius: '3px' }}
-                    >
-                      <img src={foto.url} alt={`Foto ${indice + 1}`} className="w-full h-full object-cover" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <GaleriaFotos
+              fotos={fotos}
+              titulo={pelicula.titulo}
+              tieneDescuento={tieneDescuento}
+              descuentoPorcentaje={pelicula.descuentoPorcentaje}
+            />
           </div>
 
           {/* Right column */}
@@ -267,6 +253,23 @@ function DetallePelicula({ token, usuario, onCarritoActualizado }) {
                   <span className="material-symbols-outlined">shopping_cart</span>
                   <span>Agregar al carrito</span>
                 </button>
+                {usuario && usuario.role === 'COMPRADOR' && (
+                  <button
+                    type="button"
+                    disabled={toggleandoFav}
+                    onClick={handleToggleFavorito}
+                    className="w-10 h-10 flex items-center justify-center shadow-[3px_3px_0px_#000000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[5px_5px_0px_#000000] transition-all cursor-pointer border-none disabled:opacity-50 flex-shrink-0"
+                    style={{
+                      backgroundColor: esFavorito ? '#E53935' : '#fff8e7',
+                      color: esFavorito ? '#fff' : '#E53935',
+                      border: '3px solid #000000',
+                      borderRadius: '999px'
+                    }}
+                    title={esFavorito ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                  >
+                    <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: esFavorito ? "'FILL' 1" : "'FILL' 0" }}>favorite</span>
+                  </button>
+                )}
               </div>
             )}
 

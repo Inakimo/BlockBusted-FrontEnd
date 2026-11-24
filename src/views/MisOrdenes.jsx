@@ -1,11 +1,33 @@
 import { useState, useEffect } from 'react'
+import { useSelector } from 'react-redux'
+import { toast } from '../utils/toast.js'
+import PageLoading from '../components/PageLoading.jsx'
+import PageError from '../components/PageError.jsx'
 
 const URL_BASE = 'http://localhost:4002'
 
-function MisOrdenes({ token }) {
+function MisOrdenes() {
+  const token = useSelector((s) => s.auth.token)
   const [ordenes, setOrdenes] = useState([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
+  const [cancelando, setCancelando] = useState(null)
+  const [confirmarCancelarId, setConfirmarCancelarId] = useState(null)
+
+  function handleCancelarOrden(ordenId) {
+    setConfirmarCancelarId(null)
+    setCancelando(ordenId)
+    fetch(`${URL_BASE}/api/ordenes/${ordenId}/cancelar`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${token}` },
+    })
+      .then((res) => {
+        setCancelando(null)
+        if (!res.ok) return res.json().then((d) => toast(d.message || 'No se pudo cancelar.'))
+        setOrdenes((prev) => prev.map((o) => o.id === ordenId ? { ...o, estado: 'CANCELADA' } : o))
+      })
+      .catch(() => { setCancelando(null); toast('Error de conexión.') })
+  }
 
   function cargarOrdenes() {
     if (ordenes.length === 0) setCargando(true)
@@ -45,21 +67,8 @@ function MisOrdenes({ token }) {
   }
 
 
-  if (cargando && ordenes.length === 0) {
-    return (
-      <div className="w-full max-w-6xl mx-auto px-margin-sm lg:px-margin py-space-xl">
-        <p className="font-headline-md text-headline-md text-cream text-center">Cargando órdenes...</p>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="w-full max-w-6xl mx-auto px-margin-sm lg:px-margin py-space-xl">
-        <p className="font-headline-md text-headline-md text-secondary-container text-center">{error}</p>
-      </div>
-    )
-  }
+  if (cargando && ordenes.length === 0) return <PageLoading texto="Cargando órdenes..." />
+  if (error) return <PageError texto={error} />
 
   return (
     <div className="flex flex-col w-full">
@@ -150,6 +159,41 @@ function MisOrdenes({ token }) {
                       <span className="font-headline-lg text-headline-lg text-ink-black tracking-wider drop-shadow-[1px_1px_0_#ffd700]">
                         ORDEN #{orden.id}
                       </span>
+                      {esConfirmada && (
+                        confirmarCancelarId === orden.id ? (
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              disabled={cancelando === orden.id}
+                              onClick={() => handleCancelarOrden(orden.id)}
+                              className="font-label-sm text-label-sm px-space-sm py-0.5 uppercase tracking-wider flex items-center gap-1 cursor-pointer border-none shadow-[1px_1px_0_#000000] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[2px_2px_0_#000000] disabled:opacity-50"
+                              style={{ backgroundColor: '#E53935', color: '#fff', border: '2px solid #000000' }}
+                            >
+                              <span className="material-symbols-outlined text-[13px]">check</span>
+                              Confirmar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmarCancelarId(null)}
+                              className="font-label-sm text-label-sm px-space-sm py-0.5 uppercase tracking-wider flex items-center gap-1 cursor-pointer border-none shadow-[1px_1px_0_#000000] transition-all"
+                              style={{ backgroundColor: '#f3f4f6', color: '#000', border: '2px solid #000000' }}
+                            >
+                              No
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={cancelando === orden.id}
+                            onClick={() => setConfirmarCancelarId(orden.id)}
+                            className="font-label-sm text-label-sm px-space-sm py-0.5 uppercase tracking-wider flex items-center gap-1 cursor-pointer border-none shadow-[1px_1px_0_#000000] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[2px_2px_0_#000000] disabled:opacity-50"
+                            style={{ backgroundColor: '#fee2e2', color: '#E53935', border: '2px solid #000000' }}
+                          >
+                            <span className="material-symbols-outlined text-[13px]">cancel</span>
+                            {cancelando === orden.id ? 'Cancelando...' : 'Cancelar'}
+                          </button>
+                        )
+                      )}
                       <span className="text-ink-black font-bold hidden sm:inline">•</span>
                       <div className="flex items-center gap-1 font-body-sm text-body-sm font-semibold text-muted-gray">
                         <span className="material-symbols-outlined text-[18px]">calendar_month</span>
@@ -239,10 +283,23 @@ function MisOrdenes({ token }) {
 
                   {/* Footer */}
                   {esConfirmada ? (
-                    <div className="pt-space-sm flex items-center justify-between gap-space-md" style={{ borderTop: '2px dashed #000000' }}>
+                    <div className="pt-space-sm flex flex-wrap items-center justify-between gap-space-md" style={{ borderTop: '2px dashed #000000' }}>
                       <div className="flex items-center gap-2 text-muted-gray font-body-sm text-body-sm">
                         <span className="material-symbols-outlined text-[20px] text-ink-black">package_2</span>
                         <span>Envío a domicilio seleccionado</span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-space-sm">
+                        {orden.metodoPago && (
+                          <span className="font-label-sm text-label-sm px-2 py-0.5 bg-ink-black text-primary-container uppercase" style={{ border: '1px solid #000000' }}>
+                            {orden.metodoPago.tipo.replace('_', ' ')}
+                            {orden.metodoPago.descripcion ? ` · ${orden.metodoPago.descripcion}` : ''}
+                          </span>
+                        )}
+                        {orden.descuentoAplicado > 0 && (
+                          <span className="font-label-sm text-label-sm px-2 py-0.5 bg-primary-container text-ink-black uppercase" style={{ border: '1px solid #000000' }}>
+                            -{orden.descuentoAplicado}% DESCUENTO
+                          </span>
+                        )}
                       </div>
                     </div>
                   ) : (

@@ -1,24 +1,32 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
+import { useDispatch } from 'react-redux'
+import { login } from '../store/authSlice'
+import { fetchCantidadCarrito } from '../store/carritoSlice'
+import { toast } from '../utils/toast.js'
 
 const URL_BASE = 'http://localhost:4002'
 
-function Login({ onLogin }) {
+function Login() {
+  const dispatch = useDispatch()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [mostrarPassword, setMostrarPassword] = useState(false)
   const [error, setError] = useState(null)
+  const [pendiente, setPendiente] = useState(false)
   const [cargando, setCargando] = useState(false)
   const navigate = useNavigate()
 
   function handleSubmit(e) {
     e.preventDefault()
 
-    if (email.trim() === '') { alert('El email es obligatorio'); return }
-    if (password.trim() === '') { alert('La contraseña es obligatoria'); return }
+    if (email.trim() === '') { toast('El email es obligatorio'); return }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { toast('El email no es válido'); return }
+    if (password.trim() === '') { toast('La contraseña es obligatoria'); return }
 
     setCargando(true)
     setError(null)
+    setPendiente(false)
 
     fetch(`${URL_BASE}/api/v1/auth/authenticate`, {
       method: 'POST',
@@ -28,7 +36,11 @@ function Login({ onLogin }) {
       .then((response) => {
         if (!response.ok) {
           return response.json().then((data) => {
-            setError(data.message || 'Email o contraseña incorrectos')
+            if (data.pendiente) {
+              setPendiente(true)
+            } else {
+              setError(data.message || 'Email o contraseña incorrectos')
+            }
             setCargando(false)
           })
         }
@@ -40,7 +52,8 @@ function Login({ onLogin }) {
           })
             .then((res) => res.json())
             .then((usuario) => {
-              onLogin(token, usuario)
+              dispatch(login({ token, usuario }))
+              dispatch(fetchCantidadCarrito())
               navigate('/')
             })
             .catch((err) => {
@@ -93,7 +106,7 @@ function Login({ onLogin }) {
         >
           {/* NEW tape corner sticker */}
           <div
-            className="absolute -top-3 -right-3 w-10 h-6 bg-cream rotate-12 shadow-[2px_2px_0_#000] pointer-events-none opacity-90 flex items-center justify-center font-label-sm text-ink-black"
+            className="absolute -top-3 -left-3 w-10 h-6 bg-cream -rotate-12 shadow-[2px_2px_0_#000] pointer-events-none opacity-90 flex items-center justify-center font-label-sm text-ink-black"
             style={{ border: '2px solid #000000', fontSize: '9px', fontWeight: 900 }}
           >
             NEW
@@ -111,6 +124,33 @@ function Login({ onLogin }) {
               Accede a tu cuenta de BlockBusted
             </p>
           </div>
+
+          {/* Pendiente banner */}
+          {pendiente && (
+            <div
+              className="mb-5 text-ink-black p-4 flex items-start gap-3 shadow-[3px_3px_0_#000] transition-all"
+              style={{ backgroundColor: '#fef3c7', border: '3px solid #d97706', borderRadius: '6px' }}
+            >
+              <span className="material-symbols-outlined shrink-0 text-headline-sm mt-0.5" style={{ color: '#d97706', fontVariationSettings: "'FILL' 1" }}>
+                hourglass_empty
+              </span>
+              <div className="flex-1">
+                <p className="font-label-md text-label-md uppercase font-black mb-1" style={{ color: '#92400e' }}>Cuenta pendiente de aprobación</p>
+                <p className="font-body-sm text-body-sm font-medium" style={{ color: '#78350f' }}>
+                  Tu solicitud de vendedor está esperando que un administrador la apruebe. Una vez aprobada vas a poder ingresar.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="bg-transparent border-none cursor-pointer p-0.5"
+                onClick={() => setPendiente(false)}
+                aria-label="Cerrar"
+                style={{ color: '#92400e' }}
+              >
+                <span className="material-symbols-outlined text-label-md">close</span>
+              </button>
+            </div>
+          )}
 
           {/* Error banner */}
           {error && (
@@ -152,7 +192,7 @@ function Login({ onLogin }) {
               <div className="relative">
                 <input
                   id="email"
-                  type="email"
+                  type="text"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="cinefilo@parodias.com"

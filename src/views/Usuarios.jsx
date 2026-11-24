@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react'
+import { useSelector } from 'react-redux'
+import { toast } from '../utils/toast.js'
+import PageLoading from '../components/PageLoading.jsx'
+import PageError from '../components/PageError.jsx'
 
 const URL_BASE = 'http://localhost:4002'
 
-function Usuarios({ token }) {
+function Usuarios() {
+  const token = useSelector((s) => s.auth.token)
   const [usuarios, setUsuarios] = useState([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
@@ -47,10 +52,10 @@ function Usuarios({ token }) {
     })
       .then((response) => {
         if (!response.ok) {
-          if (response.status === 403) { alert('No tenés permiso para cambiar el rol.'); return }
-          return response.json().then((data) => { alert(data.message) })
+          if (response.status === 403) { toast('No tenés permiso para cambiar el rol.'); return }
+          return response.json().then((data) => { toast(data.message) })
         }
-        cargarUsuarios()
+        setUsuarios((prev) => prev.map((u) => u.id === usuarioId ? { ...u, role: nuevoRol } : u))
       })
       .catch((err) => { console.error('Error al cambiar rol', err) })
   }
@@ -62,20 +67,43 @@ function Usuarios({ token }) {
     })
       .then((response) => {
         if (!response.ok) {
-          if (response.status === 403) { alert('No tenés permiso para eliminar este usuario.'); return }
-          return response.json().then((data) => { alert(data.message) })
+          if (response.status === 403) { toast('No tenés permiso para eliminar este usuario.'); return }
+          return response.json().then((data) => { toast(data.message) })
         }
-        cargarUsuarios()
+        setUsuarios((prev) => prev.filter((u) => u.id !== usuarioId))
       })
       .catch((err) => { console.error('Error al eliminar usuario', err) })
   }
 
-  if (cargando && usuarios.length === 0) return <p className="text-center text-cream font-body-lg text-body-lg py-space-xl">Cargando usuarios...</p>
-  if (error) return <p className="text-center text-secondary-container font-body-lg text-body-lg py-space-xl">{error}</p>
+  function handleAprobarVendedor(usuarioId) {
+    fetch(`${URL_BASE}/api/usuarios/${usuarioId}/aprobar-vendedor`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (res.ok) setUsuarios((prev) => prev.map((u) => u.id === usuarioId ? { ...u, role: 'VENDEDOR', solicitaVendedor: false } : u))
+      })
+      .catch(() => {})
+  }
+
+  function handleRechazarVendedor(usuarioId) {
+    fetch(`${URL_BASE}/api/usuarios/${usuarioId}/rechazar-vendedor`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (res.ok) setUsuarios((prev) => prev.map((u) => u.id === usuarioId ? { ...u, solicitaVendedor: false } : u))
+      })
+      .catch(() => {})
+  }
+
+  if (cargando && usuarios.length === 0) return <PageLoading texto="Cargando usuarios..." />
+  if (error) return <PageError texto={error} />
 
   const totalAdmins = usuarios.filter((u) => u.role === 'ADMIN').length
   const totalVendedores = usuarios.filter((u) => u.role === 'VENDEDOR').length
   const totalCompradores = usuarios.filter((u) => u.role === 'COMPRADOR').length
+  const solicitudes = usuarios.filter((u) => u.solicitaVendedor)
 
   return (
     <section className="max-w-7xl mx-auto px-margin-sm md:px-margin py-space-lg md:py-space-xl w-full flex flex-col gap-space-lg">
@@ -144,6 +172,45 @@ function Usuarios({ token }) {
           </div>
         </div>
       </div>
+
+      {/* Solicitudes vendedor */}
+      {solicitudes.length > 0 && (
+        <div className="bg-card-surface border-[3px] border-primary-container shadow-[4px_4px_0px_#000000] rounded-lg overflow-hidden">
+          <div className="bg-primary-container text-ink-black px-space-md py-space-sm flex items-center gap-2" style={{ borderBottom: '2px solid #000000' }}>
+            <span className="material-symbols-outlined text-headline-sm" style={{ fontVariationSettings: "'FILL' 1" }}>storefront</span>
+            <span className="font-headline-sm text-headline-sm uppercase">Solicitudes de Vendedor ({solicitudes.length})</span>
+          </div>
+          <div className="divide-y-2 divide-ink-black">
+            {solicitudes.map((u) => (
+              <div key={u.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm px-space-md py-space-sm bg-cream/60">
+                <div>
+                  <span className="font-label-md text-label-md font-bold text-ink-black">{u.username}</span>
+                  <span className="ml-2 text-muted-gray font-body-sm text-body-sm">{u.email}</span>
+                  <span className="ml-2 text-muted-gray font-body-sm text-body-sm">{u.firstName} {u.lastName}</span>
+                </div>
+                <div className="flex items-center gap-space-sm">
+                  <button
+                    type="button"
+                    onClick={() => handleAprobarVendedor(u.id)}
+                    className="bg-[#d1fae5] text-ink-black font-label-sm text-label-sm px-space-sm py-[5px] border-2 border-ink-black shadow-[2px_2px_0px_#000000] uppercase font-bold inline-flex items-center gap-1 cursor-pointer hover:shadow-[3px_3px_0px_#000000] transition-all"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                    Aprobar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleRechazarVendedor(u.id)}
+                    className="bg-card-surface text-secondary-container font-label-sm text-label-sm px-space-sm py-[5px] border-2 border-secondary-container shadow-[2px_2px_0px_#000000] uppercase font-bold inline-flex items-center gap-1 cursor-pointer hover:shadow-[3px_3px_0px_#000000] transition-all"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">cancel</span>
+                    Rechazar
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Table card */}
       <div className="bg-card-surface border-2 border-ink-black shadow-[6px_6px_0px_#000000] rounded-xl overflow-hidden flex flex-col">

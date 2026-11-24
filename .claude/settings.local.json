@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\iñaki\\\\Desktop\\\\BlockBusted-FrontEnd\" -Force)",
+      "Bash(Select-Object Name, PSIsContainer)",
+      "Bash(mvn compile *)",
+      "Bash(pip show *)",
+      "Bash(python generar_blockbusted.py)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "mcp__claude_ai_Claude_Docs__batch",
+      "mcp__claude_ai_Claude_Docs__guide",
+      "mcp__claude_ai_Claude_Docs__update"
+    ]
+  }
+}

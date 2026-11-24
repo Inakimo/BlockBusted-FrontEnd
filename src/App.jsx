@@ -1,7 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
+import { restoreSession } from './store/authSlice'
+import { fetchCantidadCarrito } from './store/carritoSlice'
 import Navigation from './components/Navigation.jsx'
 import Footer from './components/Footer.jsx'
+import ProtectedRoute from './components/ProtectedRoute.jsx'
 import Inicio from './views/Inicio.jsx'
 import Catalogo from './views/Catalogo.jsx'
 import Login from './views/Login.jsx'
@@ -14,99 +18,72 @@ import Categorias from './views/Categorias.jsx'
 import Usuarios from './views/Usuarios.jsx'
 import OrdenesAdmin from './views/OrdenesAdmin.jsx'
 import DetallePelicula from './views/DetallePelicula.jsx'
-
-const URL_BASE = 'http://localhost:4002'
+import Favoritos from './views/Favoritos.jsx'
+import Toast from './components/Toast.jsx'
 
 function App() {
-  const [token, setToken] = useState(localStorage.getItem('token'))
-  const [usuario, setUsuario] = useState(null)
-  const [cantidadCarrito, setCantidadCarrito] = useState(0)
-  const [sesionLista, setSesionLista] = useState(false)
-
-  function handleLogin(nuevoToken, nuevoUsuario) {
-    localStorage.setItem('token', nuevoToken)
-    setToken(nuevoToken)
-    setUsuario(nuevoUsuario)
-  }
-
-  function handleLogout() {
-    localStorage.removeItem('token')
-    setToken(null)
-    setUsuario(null)
-    setCantidadCarrito(0)
-  }
+  const dispatch = useDispatch()
+  const { usuario, sesionLista } = useSelector((s) => s.auth)
 
   useEffect(() => {
-    if (!token) {
-      setSesionLista(true)
-      return
-    }
-    if (usuario) {
-      setSesionLista(true)
-      return
-    }
-
-    fetch(`${URL_BASE}/api/usuarios/me`, {
-      headers: { 'Authorization': `Bearer ${token}` },
-    })
-      .then((response) => {
-        if (!response.ok) {
-          localStorage.removeItem('token')
-          setToken(null)
-          setSesionLista(true)
-          return
-        }
-        return response.json().then((data) => {
-          setUsuario(data)
-          setSesionLista(true)
-        })
-      })
-      .catch((err) => {
-        console.error('Error al restaurar sesión', err)
-        localStorage.removeItem('token')
-        setToken(null)
-        setSesionLista(true)
-      })
-  }, [token])
-
-  function recargarCantidadCarrito() {
-    if (!token || !usuario || usuario.role !== 'COMPRADOR') return
-
-    fetch(`${URL_BASE}/api/carrito`, {
-      headers: { 'Authorization': `Bearer ${token}` },
-    })
-      .then((response) => {
-        if (!response.ok) return
-        return response.json().then((data) => {
-          const items = data && data.items ? data.items : []
-          setCantidadCarrito(items.reduce((acc, it) => acc + (Number(it.cantidad) || 0), 0))
-        })
-      })
-      .catch((err) => { console.error('Error al cargar cantidad del carrito', err) })
-  }
+    dispatch(restoreSession())
+  }, [dispatch])
 
   useEffect(() => {
-    recargarCantidadCarrito()
-  }, [token, usuario])
+    if (usuario) dispatch(fetchCantidadCarrito())
+  }, [usuario, dispatch])
 
   return (
     <div className="min-h-screen flex flex-col bg-comic-bg text-cream font-montserrat selection:bg-comic-yellow selection:text-ink-black">
-      <Navigation usuario={usuario} onLogout={handleLogout} cantidadCarrito={cantidadCarrito} />
+      <Navigation />
       <main className="w-full pt-[72px] flex-1">
         {sesionLista ? (
           <Routes>
-            <Route path="/" element={<Inicio token={token} usuario={usuario} />} />
-            <Route path="/catalogo" element={<Catalogo token={token} usuario={usuario} onCarritoActualizado={recargarCantidadCarrito} />} />
-            <Route path="/login" element={<Login onLogin={handleLogin} />} />
-            <Route path="/registro" element={<Registro onLogin={handleLogin} />} />
-            <Route path="/carrito" element={<Carrito token={token} onCarritoActualizado={recargarCantidadCarrito} />} />
-            <Route path="/mis-ordenes" element={<MisOrdenes token={token} />} />
-            <Route path="/mis-peliculas" element={<MisPeliculas token={token} usuario={usuario} />} />
-            <Route path="/mi-perfil" element={<MiPerfil token={token} usuario={usuario} onActualizarUsuario={setUsuario} />} />
-            <Route path="/categorias" element={<Categorias token={token} />} />
-            <Route path="/usuarios" element={<Usuarios token={token} />} />
-            <Route path="/ordenes" element={<OrdenesAdmin token={token} />} />
-            <Route path="/pelicula" element={<DetallePelicula token={token} usuario={usuario} onCarritoActualizado={recargarCantidadCarrito} />} />
+            <Route path="/" element={<Inicio />} />
+            <Route path="/catalogo" element={<Catalogo />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/registro" element={<Registro />} />
+            <Route path="/carrito" element={
+              <ProtectedRoute rolesPermitidos={['COMPRADOR']} redirectTo="/catalogo">
+                <Carrito />
+              </ProtectedRoute>
+            } />
+            <Route path="/favoritos" element={
+              <ProtectedRoute rolesPermitidos={['COMPRADOR']} redirectTo="/catalogo">
+                <Favoritos />
+              </ProtectedRoute>
+            } />
+            <Route path="/mis-ordenes" element={
+              <ProtectedRoute rolesPermitidos={['COMPRADOR']} redirectTo="/catalogo">
+                <MisOrdenes />
+              </ProtectedRoute>
+            } />
+            <Route path="/mis-peliculas" element={
+              <ProtectedRoute rolesPermitidos={['VENDEDOR']} redirectTo="/catalogo">
+                <MisPeliculas />
+              </ProtectedRoute>
+            } />
+            <Route path="/mi-perfil" element={
+              <ProtectedRoute redirectTo="/login">
+                <MiPerfil />
+              </ProtectedRoute>
+            } />
+            <Route path="/categorias" element={
+              <ProtectedRoute rolesPermitidos={['ADMIN']} redirectTo="/">
+                <Categorias />
+              </ProtectedRoute>
+            } />
+            <Route path="/usuarios" element={
+              <ProtectedRoute rolesPermitidos={['ADMIN']} redirectTo="/">
+                <Usuarios />
+              </ProtectedRoute>
+            } />
+            <Route path="/ordenes" element={
+              <ProtectedRoute rolesPermitidos={['ADMIN']} redirectTo="/">
+                <OrdenesAdmin />
+              </ProtectedRoute>
+            } />
+            <Route path="/pelicula" element={<DetallePelicula />} />
           </Routes>
         ) : (
           <div className="w-full py-space-xl flex items-center justify-center">
@@ -115,6 +92,7 @@ function App() {
         )}
       </main>
       <Footer />
+      <Toast />
     </div>
   )
 }

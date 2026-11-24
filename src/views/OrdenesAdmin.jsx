@@ -1,33 +1,44 @@
 import { useState, useEffect } from 'react'
+import { useSelector } from 'react-redux'
+import { toast } from '../utils/toast.js'
+import PageLoading from '../components/PageLoading.jsx'
+import PageError from '../components/PageError.jsx'
 
 const URL_BASE = 'http://localhost:4002'
 
-function OrdenesAdmin({ token }) {
+function OrdenesAdmin() {
+  const token = useSelector((s) => s.auth.token)
   const [ordenes, setOrdenes] = useState([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
+  const [confirmarEliminarId, setConfirmarEliminarId] = useState(null)
 
-  useEffect(() => {
+  function cargarOrdenes() {
+    if (ordenes.length === 0) setCargando(true)
     fetch(`${URL_BASE}/api/admin/ordenes`, {
       headers: { 'Authorization': `Bearer ${token}` },
     })
       .then((response) => {
-        if (!response.ok) {
-          setError('No se pudieron cargar las órdenes.')
-          setCargando(false)
-          return
-        }
-        return response.json().then((data) => {
-          setOrdenes(data)
-          setCargando(false)
-        })
+        if (!response.ok) { setError('No se pudieron cargar las órdenes.'); setCargando(false); return }
+        return response.json().then((data) => { setOrdenes(data); setCargando(false) })
       })
-      .catch((err) => {
-        console.error('Error al cargar órdenes', err)
-        setError('Error de conexión.')
-        setCargando(false)
+      .catch(() => { setError('Error de conexión.'); setCargando(false) })
+  }
+
+  function handleEliminar(ordenId) {
+    setConfirmarEliminarId(null)
+    fetch(`${URL_BASE}/api/admin/ordenes/${ordenId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (!res.ok) return res.json().then((d) => toast(d.message || 'No se pudo eliminar.'))
+        setOrdenes((prev) => prev.filter((o) => o.id !== ordenId))
       })
-  }, [])
+      .catch(() => toast('Error de conexión.'))
+  }
+
+  useEffect(() => { cargarOrdenes() }, [])
 
   function formatearFecha(fechaStr) {
     const fecha = new Date(fechaStr)
@@ -37,8 +48,8 @@ function OrdenesAdmin({ token }) {
     return `${dia}/${mes}/${anio}`
   }
 
-  if (cargando) return <p className="text-center text-cream font-body-lg text-body-lg py-space-xl">Cargando órdenes...</p>
-  if (error) return <p className="text-center text-secondary-container font-body-lg text-body-lg py-space-xl">{error}</p>
+  if (cargando) return <PageLoading texto="Cargando órdenes..." />
+  if (error) return <PageError texto={error} />
 
   const totalConfirmadas = ordenes.filter((o) => !o.estado || o.estado === 'CONFIRMADA').length
   const totalCanceladas = ordenes.filter((o) => o.estado === 'CANCELADA').length
@@ -230,7 +241,47 @@ function OrdenesAdmin({ token }) {
                     <span>Ticket: <strong>#BB-{orden.id}</strong></span>
                     <span>·</span>
                     <span className="text-primary-container">{orden.detalles.length} ítem(s)</span>
+                    {orden.metodoPago && (
+                      <>
+                        <span>·</span>
+                        <span>{orden.metodoPago.tipo.replace('_', ' ')}</span>
+                      </>
+                    )}
+                    {orden.descuentoAplicado > 0 && (
+                      <>
+                        <span>·</span>
+                        <span className="text-primary-container">-{orden.descuentoAplicado}% desc.</span>
+                      </>
+                    )}
                   </div>
+                  {confirmarEliminarId === orden.id ? (
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleEliminar(orden.id)}
+                        className="bg-secondary-container text-cream font-label-sm text-label-sm px-space-sm py-[4px] border-[2px] border-ink-black shadow-[2px_2px_0px_#000000] hover:shadow-[3px_3px_0px_#000000] uppercase font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">check</span>
+                        Confirmar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmarEliminarId(null)}
+                        className="bg-cream text-ink-black font-label-sm text-label-sm px-space-sm py-[4px] border-[2px] border-ink-black shadow-[2px_2px_0px_#000000] hover:shadow-[3px_3px_0px_#000000] uppercase font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                      >
+                        No
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmarEliminarId(orden.id)}
+                      className="bg-secondary-container text-cream font-label-sm text-label-sm px-space-sm py-[4px] border-[2px] border-ink-black shadow-[2px_2px_0px_#000000] hover:shadow-[3px_3px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] uppercase font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">delete_forever</span>
+                      Eliminar
+                    </button>
+                  )}
                 </div>
               </div>
             )
