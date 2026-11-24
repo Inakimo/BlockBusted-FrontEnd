@@ -4,12 +4,14 @@ import { fetchCantidadCarrito } from '../store/carritoSlice'
 import TarjetaPelicula from '../components/TarjetaPelicula.jsx'
 import PageLoading from '../components/PageLoading.jsx'
 import PageError from '../components/PageError.jsx'
+import { toast } from '../utils/toast.js'
 
 const URL_BASE = 'http://localhost:4002'
 
 function Catalogo() {
   const dispatch = useDispatch()
   const token = useSelector((s) => s.auth.token)
+  const usuario = useSelector((s) => s.auth.usuario)
   const [peliculas, setPeliculas] = useState([])
   const [categorias, setCategorias] = useState([])
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('')
@@ -67,6 +69,19 @@ function Catalogo() {
         setMensajeCarrito({ tipo: 'error', texto: 'No se pudo agregar al carrito.' })
         setTimeout(() => setMensajeCarrito(null), 4000)
       })
+  }
+
+  function handleEliminarPelicula(peliculaId) {
+    fetch(`${URL_BASE}/api/peliculas/${peliculaId}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (!res.ok) return res.json().then((d) => toast(d.message || 'No se pudo eliminar.'))
+        setPeliculas((prev) => prev.filter((p) => p.id !== peliculaId))
+        toast('Película eliminada.')
+      })
+      .catch(() => toast('Error de conexión.'))
   }
 
   if (cargando) return <PageLoading texto="Cargando películas..." />
@@ -212,6 +227,7 @@ function Catalogo() {
                 key={pelicula.id}
                 pelicula={pelicula}
                 onAgregarAlCarrito={handleAgregarAlCarrito}
+                onEliminar={usuario?.role === 'ADMIN' ? handleEliminarPelicula : null}
               />
             ))}
           </div>

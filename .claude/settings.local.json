@@ -34,7 +34,11 @@
       "PowerShell($drive = Get-PSDrive C; Write-Host \"Free: $\\([math]::Round\\($drive.Free/1GB, 2\\)\\) GB\")",
       "PowerShell(Get-ChildItem \"C:\\\\Users\\\\iñaki\\\\Desktop\" -File | Sort-Object Length -Descending | Select-Object Name, @{N=\"MB\";E={[math]::Round\\($_.Length/1MB,1\\)}} | Select-Object -First 10)",
       "PowerShell(Get-ChildItem \"C:\\\\Users\\\\iñaki\\\\Desktop\" -File | Where-Object {$_.Length -gt 10MB} | ForEach-Object { \"$\\([math]::Round\\($_.Length/1MB,0\\)\\) MB - $\\($_.Name\\)\" })",
-      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(r['usuarioNombre']\\) for r in d]\")"
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(r['usuarioNombre']\\) for r in d]\")",
+      "Bash(.\\\\mvnw.cmd spring-boot:run)",
+      "PowerShell(Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"C:\\\\Users\\\\iñaki\\\\Documents\\\\BlockBusted\\\\demo\"; .\\\\mvnw.cmd spring-boot:run')",
+      "PowerShell(Start-Process powershell -ArgumentList '-NoExit', '-Command', 'cd \"C:\\\\Users\\\\iñaki\\\\Desktop\\\\BlockBusted-FrontEnd\"; npm run dev')",
+      "Bash(node -e \"require\\('redux-persist'\\)\")"
     ]
   }
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { toast } from '../utils/toast.js'
 import { useSelector, useDispatch } from 'react-redux'
 import { fetchCantidadCarrito } from '../store/carritoSlice'
 import PageLoading from '../components/PageLoading.jsx'
@@ -24,6 +25,7 @@ function DetallePelicula() {
   const [mensajeCarrito, setMensajeCarrito] = useState(null)
   const [esFavorito, setEsFavorito] = useState(false)
   const [toggleandoFav, setToggleandoFav] = useState(false)
+  const [confirmarEliminar, setConfirmarEliminar] = useState(false)
 
   useEffect(() => {
     if (peliculaId && token && usuario && usuario.role === 'COMPRADOR') {
@@ -74,6 +76,19 @@ function DetallePelicula() {
         setCargando(false)
       })
   }, [peliculaId])
+
+  function handleEliminar() {
+    fetch(`${URL_BASE}/api/peliculas/${pelicula.id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (!res.ok) return res.json().then((d) => toast(d.message || 'No se pudo eliminar.'))
+        toast('Película eliminada.')
+        navigate('/catalogo')
+      })
+      .catch(() => toast('Error de conexión.'))
+  }
 
   function handleAgregarAlCarrito() {
     if (!token) { navigate('/login'); return }
@@ -284,6 +299,39 @@ function DetallePelicula() {
                 <span className="material-symbols-outlined">bolt</span>
                 <span>Iniciá sesión para comprar</span>
               </button>
+            )}
+
+            {usuario?.role === 'ADMIN' && (
+              <div className="pt-space-xs" style={{ borderTop: '2px dashed #000' }}>
+                {confirmarEliminar ? (
+                  <div className="flex items-center gap-space-xs">
+                    <span className="font-label-sm text-label-sm text-ink-black uppercase font-bold flex-1">¿Eliminar esta película?</span>
+                    <button
+                      type="button"
+                      onClick={handleEliminar}
+                      className="bg-secondary-container text-cream font-label-sm text-label-sm px-space-sm py-[6px] border-[2px] border-ink-black shadow-[2px_2px_0px_#000000] uppercase font-bold inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">check</span>Sí, eliminar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmarEliminar(false)}
+                      className="bg-cream text-ink-black font-label-sm text-label-sm px-space-sm py-[6px] border-[2px] border-ink-black shadow-[2px_2px_0px_#000000] uppercase font-bold cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmarEliminar(true)}
+                    className="w-full bg-secondary-container text-cream font-label-sm text-label-sm px-space-md py-[6px] border-[2px] border-ink-black shadow-[2px_2px_0px_#000000] uppercase font-bold inline-flex items-center justify-center gap-1 cursor-pointer hover:shadow-[3px_3px_0px_#000000] transition-all"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">delete_forever</span>
+                    Eliminar película
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>

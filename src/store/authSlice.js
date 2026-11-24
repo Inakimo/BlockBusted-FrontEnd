@@ -2,18 +2,16 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
 
 const URL_BASE = 'http://localhost:4002'
 
-export const restoreSession = createAsyncThunk('auth/restoreSession', async () => {
-  const token = localStorage.getItem('token')
+export const restoreSession = createAsyncThunk('auth/restoreSession', async (_, { getState }) => {
+  const { auth } = getState()
+  const token = auth.token
   if (!token) return { token: null, usuario: null }
 
   const response = await fetch(`${URL_BASE}/api/usuarios/me`, {
     headers: { Authorization: `Bearer ${token}` },
   })
 
-  if (!response.ok) {
-    localStorage.removeItem('token')
-    return { token: null, usuario: null }
-  }
+  if (!response.ok) return { token: null, usuario: null }
 
   const usuario = await response.json()
   return { token, usuario }
@@ -29,12 +27,10 @@ const authSlice = createSlice({
   reducers: {
     login(state, action) {
       const { token, usuario } = action.payload
-      localStorage.setItem('token', token)
       state.token = token
       state.usuario = usuario
     },
     logout(state) {
-      localStorage.removeItem('token')
       state.token = null
       state.usuario = null
     },

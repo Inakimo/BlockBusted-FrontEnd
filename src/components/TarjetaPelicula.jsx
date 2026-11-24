@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 
-function TarjetaPelicula({ pelicula, onAgregarAlCarrito }) {
+function TarjetaPelicula({ pelicula, onAgregarAlCarrito, onEliminar }) {
   const usuario = useSelector((s) => s.auth.usuario)
   const [cantidad, setCantidad] = useState(1)
+  const [confirmarEliminar, setConfirmarEliminar] = useState(false)
   const navigate = useNavigate()
 
   function handleVerDetalle() {
@@ -138,6 +139,40 @@ function TarjetaPelicula({ pelicula, onAgregarAlCarrito }) {
               CÓD: BB-{pelicula.id}
             </span>
             <span className="font-label-sm text-label-sm text-ink-black uppercase">BE KIND REWIND</span>
+          </div>
+        )}
+
+        {/* Admin delete */}
+        {onEliminar && (
+          <div className="mt-space-xs pt-space-xs" style={{ borderTop: '2px dashed #000' }}>
+            {confirmarEliminar ? (
+              <div className="flex items-center gap-1">
+                <span className="font-label-sm text-label-sm text-ink-black uppercase font-bold flex-1">¿Eliminar?</span>
+                <button
+                  type="button"
+                  onClick={() => { onEliminar(pelicula.id); setConfirmarEliminar(false) }}
+                  className="bg-secondary-container text-cream font-label-sm text-label-sm px-space-sm py-[4px] border-[2px] border-ink-black shadow-[2px_2px_0px_#000000] uppercase font-bold inline-flex items-center gap-1 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-[13px]">check</span>Sí
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmarEliminar(false)}
+                  className="bg-cream text-ink-black font-label-sm text-label-sm px-space-sm py-[4px] border-[2px] border-ink-black shadow-[2px_2px_0px_#000000] uppercase font-bold cursor-pointer"
+                >
+                  No
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmarEliminar(true)}
+                className="w-full bg-secondary-container text-cream font-label-sm text-label-sm px-space-sm py-[4px] border-[2px] border-ink-black shadow-[2px_2px_0px_#000000] uppercase font-bold inline-flex items-center justify-center gap-1 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[14px]">delete_forever</span>
+                Eliminar película
+              </button>
+            )}
           </div>
         )}
       </div>

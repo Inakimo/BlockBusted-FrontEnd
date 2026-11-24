@@ -12,6 +12,7 @@ function OrdenesAdmin() {
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState(null)
   const [confirmarEliminarId, setConfirmarEliminarId] = useState(null)
+  const [confirmarCancelarId, setConfirmarCancelarId] = useState(null)
 
   function cargarOrdenes() {
     if (ordenes.length === 0) setCargando(true)
@@ -23,6 +24,21 @@ function OrdenesAdmin() {
         return response.json().then((data) => { setOrdenes(data); setCargando(false) })
       })
       .catch(() => { setError('Error de conexión.'); setCargando(false) })
+  }
+
+  function handleCancelar(ordenId) {
+    setConfirmarCancelarId(null)
+    fetch(`${URL_BASE}/api/ordenes/${ordenId}/cancelar`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (!res.ok) return res.json().then((d) => toast(d.message || 'No se pudo cancelar.'))
+        return res.json().then((ordenActualizada) => {
+          setOrdenes((prev) => prev.map((o) => o.id === ordenId ? ordenActualizada : o))
+        })
+      })
+      .catch(() => toast('Error de conexión.'))
   }
 
   function handleEliminar(ordenId) {
@@ -254,34 +270,67 @@ function OrdenesAdmin() {
                       </>
                     )}
                   </div>
-                  {confirmarEliminarId === orden.id ? (
-                    <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-space-xs flex-wrap">
+                    {confirmarCancelarId === orden.id ? (
+                      <div className="flex items-center gap-1">
+                        <span className="font-label-sm text-label-sm text-ink-black uppercase font-bold">¿Cancelar?</span>
+                        <button
+                          type="button"
+                          onClick={() => handleCancelar(orden.id)}
+                          className="bg-orange-500 text-cream font-label-sm text-label-sm px-space-sm py-[4px] border-[2px] border-ink-black shadow-[2px_2px_0px_#000000] uppercase font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">check</span>
+                          Sí
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmarCancelarId(null)}
+                          className="bg-cream text-ink-black font-label-sm text-label-sm px-space-sm py-[4px] border-[2px] border-ink-black shadow-[2px_2px_0px_#000000] uppercase font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          No
+                        </button>
+                      </div>
+                    ) : esConfirmada ? (
                       <button
                         type="button"
-                        onClick={() => handleEliminar(orden.id)}
-                        className="bg-secondary-container text-cream font-label-sm text-label-sm px-space-sm py-[4px] border-[2px] border-ink-black shadow-[2px_2px_0px_#000000] hover:shadow-[3px_3px_0px_#000000] uppercase font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                        onClick={() => { setConfirmarCancelarId(orden.id); setConfirmarEliminarId(null) }}
+                        className="bg-orange-500 text-cream font-label-sm text-label-sm px-space-sm py-[4px] border-[2px] border-ink-black shadow-[2px_2px_0px_#000000] hover:shadow-[3px_3px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] uppercase font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
                       >
-                        <span className="material-symbols-outlined text-[14px]">check</span>
-                        Confirmar
+                        <span className="material-symbols-outlined text-[14px]">cancel</span>
+                        Cancelar
                       </button>
+                    ) : null}
+
+                    {!esConfirmada && (confirmarEliminarId === orden.id ? (
+                      <div className="flex items-center gap-1">
+                        <span className="font-label-sm text-label-sm text-ink-black uppercase font-bold">¿Eliminar?</span>
+                        <button
+                          type="button"
+                          onClick={() => handleEliminar(orden.id)}
+                          className="bg-secondary-container text-cream font-label-sm text-label-sm px-space-sm py-[4px] border-[2px] border-ink-black shadow-[2px_2px_0px_#000000] uppercase font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">check</span>
+                          Sí
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmarEliminarId(null)}
+                          className="bg-cream text-ink-black font-label-sm text-label-sm px-space-sm py-[4px] border-[2px] border-ink-black shadow-[2px_2px_0px_#000000] uppercase font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          No
+                        </button>
+                      </div>
+                    ) : (
                       <button
                         type="button"
-                        onClick={() => setConfirmarEliminarId(null)}
-                        className="bg-cream text-ink-black font-label-sm text-label-sm px-space-sm py-[4px] border-[2px] border-ink-black shadow-[2px_2px_0px_#000000] hover:shadow-[3px_3px_0px_#000000] uppercase font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
+                        onClick={() => { setConfirmarEliminarId(orden.id); setConfirmarCancelarId(null) }}
+                        className="bg-secondary-container text-cream font-label-sm text-label-sm px-space-sm py-[4px] border-[2px] border-ink-black shadow-[2px_2px_0px_#000000] hover:shadow-[3px_3px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] uppercase font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
                       >
-                        No
+                        <span className="material-symbols-outlined text-[14px]">delete_forever</span>
+                        Eliminar
                       </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setConfirmarEliminarId(orden.id)}
-                      className="bg-secondary-container text-cream font-label-sm text-label-sm px-space-sm py-[4px] border-[2px] border-ink-black shadow-[2px_2px_0px_#000000] hover:shadow-[3px_3px_0px_#000000] active:translate-x-[1px] active:translate-y-[1px] uppercase font-bold transition-all inline-flex items-center gap-1 cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined text-[14px]">delete_forever</span>
-                      Eliminar
-                    </button>
-                  )}
+                    ))}
+                  </div>
                 </div>
               </div>
             )
